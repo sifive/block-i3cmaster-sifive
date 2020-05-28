@@ -1,0 +1,54 @@
+def workspaceroot = "{here}/../../"
+def package = "sifive.blocks.i3cmaster"
+
+global def i3cmasterScalaModule =
+  def name = "i3cmaster"
+  def rootDir = "{workspaceroot}/craft/simpleprog"
+  def scalaVersion = sifiveSkeletonScalaModule.getScalaModuleScalaVersion
+  def deps = sifiveSkeletonScalaModule, sifiveBlocksScalaModule, Nil
+  makeScalaModule name rootDir scalaVersion
+  | setScalaModuleSourceDirs ("src", Nil)
+  | setScalaModuleDeps deps
+  | setScalaModuleScalacOptions ("-Xsource:2.11", Nil)
+
+
+def testBlock config = 
+   makeScalaBlock i3cmasterScalaModule "{package}.{config}"
+
+
+def demo =
+  def programName = "demo"
+  def cFiles = source "{workspaceroot}/test/main.c", Nil
+  makeTestProgramPlan programName cFiles
+  | editTestProgramPlanIncludeDirs ("{workspaceroot}/test", _)
+
+def makeI3CMasterSkeletonDUTPlan name blocks =
+  def testharness = "sifive.blocks.i3cmaster.TestSocHarness"
+  def config = "sifive.skeleton.DefaultConfig"
+  makeRocketChipDUTPlan name sifiveSkeletonScalaModule testharness config
+
+def makeI3CMasterTestSocketDUT name blocks =
+  def baseDUT =
+    makeI3CMasterSkeletonDUTPlan name Nil
+    | addRocketChipDUTPlanScalaBlock testFinisherBlock
+  foldl addRocketChipDUTPlanScalaBlock.flip baseDUT blocks
+
+global def i3cmasterDUT config =
+  def name = "i3cmasterDUT"
+  def blocks = testBlock config, Nil
+  makeI3CMasterTestSocketDUT name blocks
+
+
+publish dutTests = i3cmasterConfig0Test,Nil
+
+def i3cmasterConfig0Test =
+  def name = "demo"
+  def block = testBlock "I3CMasterConfig0"
+  def program = demo
+  def plusargs =
+    NamedArg        "verbose",
+    NamedArgInteger "random_seed"      1234,
+    NamedArgInteger "tilelink_timeout" 50000,
+    NamedArgInteger "max-cycles"       5000,
+    Nil
+  makeBlockTest name block program plusargs
