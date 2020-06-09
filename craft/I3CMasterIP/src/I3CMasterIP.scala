@@ -1,3 +1,103 @@
+
+package sifive.blocks.i3cmaster
+
+
+import chisel3._
+import chisel3.util._
+import freechips.rocketchip.config._
+import freechips.rocketchip.diplomacy._
+import freechips.rocketchip.diplomaticobjectmodel._
+import freechips.rocketchip.diplomaticobjectmodel.model.{OMDevice,OMMemoryRegion,OMComponent,OMRegister}
+import freechips.rocketchip.diplomaticobjectmodel.model._
+import freechips.rocketchip.diplomaticobjectmodel.logicaltree._
+import freechips.rocketchip.regmapper._
+import freechips.rocketchip.tilelink._
+import freechips.rocketchip.subsystem._
+import freechips.rocketchip.interrupts._
+import freechips.rocketchip.util._
+
+case object I3CMasterKey extends Field[Seq[I3CMasterParams]]
+
+case class I3CMasterParams(
+ 
+	beatBytes:	  Int = 4,
+	address:          BigInt
+)
+
+case class OMI3CMasterParams(
+	i3cmaster: I3CMasterParams,
+	memoryRegions: Seq[OMMemoryRegion],
+	interrupts : Seq[OMInterrupt],
+	_types: Seq[String] = Seq("OMI3CMaster","OMDevice","OMComponent","OMCompoundType") 
+)extends OMDevice
+
+class I3CMaster(params: I3CMasterParams)(implicit p: Parameters) extends LazyModule
+{
+	
+  val device = new SimpleDevice("i3cmaster", Seq("sifive,i3cmaster0")) 
+
+  val controlNode = TLRegisterNode(
+		address = Seq(AddressSet(params.address, 0xffff)),
+		device = device,
+		beatBytes = params.beatBytes)
+
+
+lazy val module = new LazyModuleImp(this){
+
+
+
+val r1 = RegInit(0.U(32.W))
+
+val r2 = RegInit(0.U(32.W))
+
+
+val field = Seq (
+	0x0 -> RegFieldGroup("Register1",Some("First Register"),
+	Seq(RegField(32,r1))),
+
+	0x4 -> RegFieldGroup("Register2",Some("Second Register"),
+	Seq(RegField(32,r2)))
+)
+
+controlNode.regmap(field : _*)
+}
+
+  lazy val ltnode = new LogicalTreeNode(() => Some(device)) {
+    def getOMComponents(resourceBindings: ResourceBindings, children: Seq[OMComponent] = Nil): Seq[OMComponent] = {
+      val compname = device.describe(resourceBindings).name
+      val regions = DiplomaticObjectModelAddressing.getOMMemoryRegions(compname, resourceBindings, Some(OMRegister.convert(module.field: _*)))
+      val intr = DiplomaticObjectModelAddressing.describeGlobalInterrupts(compname, resourceBindings)
+	Seq(OMI3CMasterParams(i3cmaster = params, memoryRegions = regions,interrupts = intr))
+    }
+  }
+
+}
+
+case class I3CMasterAttachParams(
+ i3cmaster : I3CMasterParams,
+ controlBus : TLBusWrapper
+ 
+) 
+
+object I3CMaster {
+
+ val nextId = { var i = -1; () => { i += 1; i}}
+
+ def attach(params : I3CMasterAttachParams)(implicit p: Parameters): I3CMaster = {
+	val name = s"i3cmaster_${nextId()}"	
+	val i3cmaster = LazyModule(new I3CMaster(params.i3cmaster.copy(beatBytes = params.controlBus.beatBytes)))
+	i3cmaster.suggestName(name)
+
+
+//params.controlBus.coupleTo(name) { i3cmaster.controlNode := TLFragmenter(params.controlBus) :=  TLWidthWidget(params.controlBus) := _ }
+ 
+ 	 params.controlBus.coupleTo(name) { i3cmaster.controlNode := TLWidthWidget(params.controlBus):= _ }
+	i3cmaster
+
+}
+}
+/*
+
 package sifive.blocks.i3cmaster
 
 
@@ -24,7 +124,7 @@ case class I3CMasterParams(
   
 							
 )
-/*
+
 class I3CPin extends Bundle{
 	val in = Bool(INPUT)
 	val out = Bool(OUTPUT)
@@ -35,7 +135,7 @@ class I3CPort extends Bundle{
 	val scl = new I3CPin
 	val sda = new I3CPin
 }
-*/
+
 
 case class OMI3CMasterParams(
 	i3cmaster: I3CMasterParams,
@@ -58,37 +158,10 @@ class I3CMaster(params: I3CMasterParams)(implicit p: Parameters) extends LazyMod
 lazy val module = new LazyModuleImp(this){
 
 
+// val i3cIO		=IO(I3CPort)  //Check this
 
-val r1 = RegInit(0.U(2.W))
+// val mfsm		= Module(new MasterFSM)
 
-val r2 = RegInit(0.U(2.W))
-
-
-val field = Seq (
-	0x0 -> RegFieldGroup("Register1",Some("First Register"),
-	Seq(RegField(2,r1),
-	RegField(30))),
-
-	0x4 -> RegFieldGroup("Register2",Some("Second Register"),
-	Seq(RegField(2,r2),
-	RegField(30)))
-
-)
-
-
-controlNode.regmap(field : _*)
-}
-/*
-lazy val module = new LazyModuleImp(this){
-
-
- val i3cIO		=IO(I3CPort)  //Check this
-
- val mfsm		= Module(new MasterFSM)
-
- val stataddr_slv       = RegInit(0.U(7.W))
- val slv_typ            = RegInit(0.U(2.W))
- 
 
  val stataddr_slv0	= RegInit(0.U(7.W))
  val slv_typ0		= RegInit(0.U(2.W))
@@ -130,9 +203,9 @@ lazy val module = new LazyModuleImp(this){
  val mst_req_slvID	= RegInit(0.U(4.W))
  val mst_req		= RegInit(false.B)
  val set_hdr_mode	= RegInit(0.U(2.W))
- val i3c_mode		= RegInit(false.B))
+ val i3c_mode		= RegInit(false.B)
  val slaveID		= RegInit(0.U(4.W))
- val r/~w		= RegInit(false.B))
+ val r/~w		= RegInit(false.B)
  val config_done	= RegInit(false.B)
 
  val num_i2c_slv	= RegInit(0.U(4.W))
@@ -178,7 +251,7 @@ lazy val module = new LazyModuleImp(this){
  val pending_read_notify= RegInit(false.B)
  val status_interrupt   = RegInit(false.B)
  val accpt_addnal_databyte= RegInit(false.B)
- val bcr[2]		= RegInit(false.B)
+ val bcr2		= RegInit(false.B)
  val ibi_ack		= RegInit(false.B)
 
  val status_grpaddr_10  = RegInit(0.U(1.W))
@@ -195,36 +268,59 @@ lazy val module = new LazyModuleImp(this){
 
  val r_data		= RegInit(0.U(32.W))
  val w_data		= RegInit(0.U(32.W))
- 
- val i3cSTcount 	= RegInit(0.U(4.W))
- val i3cWSTcount	= RegInit(0.U(4.W))
 
- def i3c_STcounter()
-{
-}
+ //Sending Slave Information to part-B
 
-def i3c_ATcounter()
-{
-}
+ mfsm.io.statAddr0 		:= stataddr_slv0
+ mfsm.io.slvType0		:= slv_typ0
+
+ mfsm.io.statAddr1 		:= stataddr_slv1
+ mfsm.io.slvType1		:= slv_typ1
+
+ mfsm.io.statAddr2 		:= stataddr_slv2
+ mfsm.io.slvType2		:= slv_typ2
+
+ mfsm.io.statAddr3 		:= stataddr_slv3
+ mfsm.io.slvType3		:= slv_typ3
+
+ mfsm.io.statAddr4 		:= stataddr_slv4
+ mfsm.io.slvType4		:= slv_typ4
+
+ mfsm.io.statAddr5 		:= stataddr_slv5
+ mfsm.io.slvType5		:= slv_typ5
+
+ mfsm.io.statAddr6 		:= stataddr_slv6
+ mfsm.io.slvType6		:= slv_typ6
+
+ mfsm.io.statAddr7 		:= stataddr_slv7
+ mfsm.io.slvType7		:= slv_typ7
+
+ mfsm.io.statAddr8 		:= stataddr_slv8
+ mfsm.io.slvType8		:= slv_typ8
+
+ mfsm.io.statAddr9 		:= stataddr_slv9
+ mfsm.io.slvType9		:= slv_typ9
+
+ mfsm.io.statAddr10 		:= stataddr_slv10
+ mfsm.io.slvType10		:= slv_typ10
+
  //sending configuration to part-B
 
- mfsm.io.configA.bus_reset	:= bus_reset
- mfsm.io.configA.chip_reset	:= chip_reset
- mfsm.io.configA.slaveId	:= slaveID
- mfsm.io.configA.readWrite	:= r/~w
+ mfsm.io.ConfigA.bus_reset	:= bus_reset
+ mfsm.io.ConfigA.chip_reset	:= chip_reset
+ mfsm.io.ConfigA.i3c_mode	:= i3c_mode
+ mfsm.io.configA.slaveId	:= slaveId
+ mfsm.io.configA.readWrite	:= readWrite
  mfsm.io.configA.config_done	:= config_done
- mfsm.io.configA.numI3C_staticAddr := i3cSTcount
- mfsm.io.configA.numI3C_without_staticAddr := i3cWSTcount
- mfsm.io.configA.totalI3C_slaves :=
+ mfsm.io.configA.load_done	:= load_done
 
 
-  val fields = Seq(
+  val field = Seq(
 
       0x0 -> RegFieldGroup("Slave_Info_Register0", Some("Slave_Info_Register0"),
 	 Seq(   RegField(2,slv_typ0,		RegFieldDesc("slv_typ0", "2'b00:No slave, 2'b01:I2C slave, 2'b10:I3C slave without static address, 2'b11:I3C slave with static address", reset= 0)), 
 		RegField(6,rsvd,		RegFieldDesc("Reserved",  "Reserved")),
-		(if (slv_type0 = 0 || slv_typ = 1)RegField(7,stataddr_slv0,	RegFieldDesc("stataddr_slv0", "7 bit static address", reset=0) else 
-		RegField(7,rsvd,		RegFieldDesc("Reserved","Reserved")))),
+		if (slv_type0 = 0 || slv_typ = 1) RegField(7,stataddr_slv0,	RegFieldDesc("stataddr_slv0", "7 bit static address", reset=0)) else  RegField(7,rsvd,		RegFieldDesc("Reserved","Reserved")),
 		RegField(17,rsvd,		RegFieldDesc("Reserved","Reserved")))),
 
       0x4 -> RegFieldGroup("Slave_Info_Register1", Some("Slave Info Register1"),
@@ -320,10 +416,10 @@ def i3c_ATcounter()
 	 Seq(   RegField.r(1,bus_busy, 		RegFieldDesc("bus_busy", "0 --> Can accept new req from host;1 --> busy in processing previous req", reset=false.B)), 
 		RegField.r(1,bus_type,		RegFieldDesc("bus_type", "0 --> I3C ; 1 --> I2C", reset=false.B)),
 		RegField.r(1,slv_ack,		RegFieldDesc("slv_ack", "Previous request was served 0 --> unsuccessful/ 1 -->successful", reset=false.B)),
-	//	RegField.r(1,status_hdr,		RegFieldDesc("status_hdr", "Hotjoined 0-->not occured ; 1-->occured", reset=false.B)),
-	//	RegField.r(1,status_ibi,		RegFieldDesc("status_ibi", "In-band Interrupt req 0-->not occured ; 1-->occured", reset=false.B)),
-	//	RegField.r(1,status_mst_req,	RegFieldDesc("status_mst_req", "Mastership req 0-->not occured ; 1-->occured", reset=false.B)),
-	//	RegField.r(1,status_grpaddr,	RegFieldDesc("status_grpaddr", "Group Addressing req 0-->not occured ; 1-->occured", reset=false.B)),
+		RegField.r(1,status_hdr,		RegFieldDesc("status_hdr", "Hotjoined 0-->not occured ; 1-->occured", reset=false.B)),
+		RegField.r(1,status_ibi,		RegFieldDesc("status_ibi", "In-band Interrupt req 0-->not occured ; 1-->occured", reset=false.B)),
+		RegField.r(1,status_mst_req,	RegFieldDesc("status_mst_req", "Mastership req 0-->not occured ; 1-->occured", reset=false.B)),
+		RegField.r(1,status_grpaddr,	RegFieldDesc("status_grpaddr", "Group Addressing req 0-->not occured ; 1-->occured", reset=false.B)),
 		RegField.w1c(1,collision_detected,  RegFieldDesc("collision_detected", "0 --> Collision not detected; 1 --> Collision detected", reset=false.B)),
 		RegField.w1c(1,err_detected,	RegFieldDesc("err_detected", "0 -->No error detected; 1 --> Error detected", reset=false.B)),
 		RegField(11,rsvd,		RegFieldDesc("Reserved",  "Reserved")),
@@ -332,7 +428,7 @@ def i3c_ATcounter()
 		RegField.r(4,num_i2c_slv,		RegFieldDesc("num_i2c_slv","Number of I2C slaves", reset=0)))),
 
       0x50 -> RegFieldGroup("Error_status_reg", Some("Specifies the fields specific to Error Condition"),
-	 Seq(	RegField(6,rsvd,		RegFieldDesc("Reserved,"Reserved")), 
+	 Seq(	RegField(6,rsvd,		RegFieldDesc("Reserved","Reserved")), 
 		RegField(1,m0,			RegFieldDesc("m0", "set when m0  error  occurs", reset=false.B)),
 		RegField(1,m2,			RegFieldDesc("m2", "set when m2  error  occurs", reset=false.B)),
 		RegField(1,m3,			RegFieldDesc("m3", "set when m3  error  occurs", reset=false.B)),
@@ -340,7 +436,7 @@ def i3c_ATcounter()
 		RegField(4,num_slvs,		RegFieldDesc("num_slvs", "Total number of slaves", reset=0)),
 		RegField(4,num_aa,		RegFieldDesc("num_aa", "Total number of addresses issued", reset=0)),
 		RegField(7,rsvd,		RegFieldDesc("Reserved","Reserved")))),
-/*
+
       0x54 -> RegFieldGroup("hdr_status_reg", Some("Specifies the fields specific to HDR Mode"),
 	 Seq(   RegField(1,hdr_transfer_invalid,RegFieldDesc("hdr_transfer_invalid", "set when current mode is not support by the slave", reset=false.B)),
 		RegField(2,status_hdr,		RegFieldDesc("status_hdr", "specifies the current type of HDR mode 2'b00:HDR-TSP,2'b01:HDR-TSL,2'b10:HDR-DDR,2'b11:HDRBulk Transport", reset=0)),
@@ -361,7 +457,7 @@ def i3c_ATcounter()
 
       0x5C -> RegFieldGroup("ibi_status_reg", Some("Specifies fields specific to IBI"),
 	 Seq(   RegField(1,ibi_ack,		RegFieldDesc("ibi_ack", "", reset=)),
-		RegField(1,bcr[2],		RegFieldDesc("bcr[2]", "", reset=)),
+		RegField(1,bcr2,		RegFieldDesc("bcr2", "", reset=)),
 		RegField(1,accpt_addnal_databyte,RegFieldDesc("accpt_addnal_databyte", "", reset=)),
 		RegField(1,status_interrupt,	RegFieldDesc("status_interrupt", "", reset=)),
 		RegField(1,pending_read_notify,	RegFieldDesc("pending_read_notify", "", reset=)),
@@ -380,7 +476,7 @@ def i3c_ATcounter()
 		RegField(1,status_grpaddr_9,	RegFieldDesc("status_grpaddr_9", "0-->not included in group addressing/1-->included in group addressing", reset=0)),
 		RegField(1,status_grpaddr_10,	RegFieldDesc("status_grpaddr_10", "0-->not included in group addressing/1-->included in group addressing", reset=0)),
 		RegField(20,rsvd, 		RegFieldDesc("Reserved", "Reserved")))),
-*/
+
       0x70 -> RegFieldGroup("Read_data_reg", Some("I3C Configuration Register"),
 	 Seq(   RegField(32,r_data, 		RegFieldDesc("r_data", "It is used to store the data that is read from the slave", reset=0)))),
 
@@ -389,9 +485,9 @@ def i3c_ATcounter()
 	 Seq(   RegField(32,w_data,		 RegFieldDesc("w_data", "It is used to store the data that is to be written to the slave", reset=0)))))
 
 
- controlNode.remap(fields: _*)
+ controlNode.remap(field: _*)
 }
-*/
+
   lazy val ltnode = new LogicalTreeNode(() => Some(device)) {
     def getOMComponents(resourceBindings: ResourceBindings, children: Seq[OMComponent] = Nil): Seq[OMComponent] = {
       val compname = device.describe(resourceBindings).name
@@ -425,3 +521,5 @@ object I3CMaster {
 
 }
 }
+*/
+

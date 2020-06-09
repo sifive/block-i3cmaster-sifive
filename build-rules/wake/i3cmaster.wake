@@ -1,9 +1,9 @@
 def workspaceroot = "{here}/../../"
-def package = "sifive.blocks.i3cmaster"
+def scalaPackage = "sifive.blocks.i3cmaster"
 
 global def i3cmasterScalaModule =
   def name = "i3cmaster"
-  def rootDir = "{workspaceroot}/craft/simpleprog"
+  def rootDir = "{workspaceroot}/craft/I3CMasterIP"
   def scalaVersion = sifiveSkeletonScalaModule.getScalaModuleScalaVersion
   def deps = sifiveSkeletonScalaModule, sifiveBlocksScalaModule, Nil
   makeScalaModule name rootDir scalaVersion
@@ -13,7 +13,7 @@ global def i3cmasterScalaModule =
 
 
 def testBlock config = 
-   makeScalaBlock i3cmasterScalaModule "{package}.{config}"
+   makeScalaBlock i3cmasterScalaModule "{scalaPackage}.{config}"
 
 
 def demo =
@@ -25,7 +25,20 @@ def demo =
 def makeI3CMasterSkeletonDUTPlan name blocks =
   def testharness = "sifive.blocks.i3cmaster.TestSocHarness"
   def config = "sifive.skeleton.DefaultConfig"
+  def customOverlay =
+    def chosenNode =
+      def ram = makeDevicetreeChosenMemoryRam "/soc/mem@80000000" 0 0
+      def entry = makeDevicetreeChosenMemoryEntry "/soc/mem@80000000" 0 0
+      def itim = None
+      makeDevicetreeChosenNode entry ram itim
+    makeDevicetreeCustomOverlay Nil chosenNode 
   makeRocketChipDUTPlan name sifiveSkeletonScalaModule testharness config
+  | setRocketChipDUTPlanCustomOverlay (Some customOverlay)
+
+# def makeI3CMasterSkeletonDUTPlan name blocks =
+#   def testharness = "sifive.blocks.i3cmaster.TestSocHarness"
+#   def config = "sifive.skeleton.DefaultConfig"
+#   makeRocketChipDUTPlan name sifiveSkeletonScalaModule testharness config
 
 def makeI3CMasterTestSocketDUT name blocks =
   def baseDUT =
@@ -48,7 +61,7 @@ def i3cmasterConfig0Test =
   def plusargs =
     NamedArg        "verbose",
     NamedArgInteger "random_seed"      1234,
-    NamedArgInteger "tilelink_timeout" 50000,
-    NamedArgInteger "max-cycles"       5000,
+    NamedArgInteger "tilelink_timeout" 900000,
+    NamedArgInteger "max-cycles"       900000,
     Nil
   makeBlockTest name block program plusargs

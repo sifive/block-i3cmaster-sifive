@@ -22,7 +22,7 @@ import sifive.skeleton._
 class I3CMasterConfig0 extends Config((site,here,up) => {
  case I3CMasterKey => Seq(I3CMasterParams(
  
-	address		= 0x10010000
+	address		= 0x10000000
 ))
 }) 
 
