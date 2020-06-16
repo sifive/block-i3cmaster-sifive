@@ -89,9 +89,10 @@ lazy val module = new LazyModuleImp(this){
  val i3c_mode		= RegInit(false.B)
  val slaveID		= RegInit(0.U(4.W))
  val readWrite		= RegInit(false.B)
+ val load_done		= RegInit(false.B)
  val config_done	= RegInit(false.B)
 
- val num_i2c_slv	= RegInit(0.U(4.W))
+ val total_num_slv	= RegInit(0.U(4.W))
  val num_i3c_slv_stataddr= RegInit(0.U(4.W))
  val num_i3c_slv_without_stataddr = RegInit(0.U(4.W))
  val err_detected	= RegInit(false.B)
@@ -100,8 +101,8 @@ lazy val module = new LazyModuleImp(this){
  val status_mst_req	= RegInit(false.B)
  val status_ibi		= RegInit(false.B)
  val status_hj		= RegInit(false.B)
+ val read_valid		= RegInit(false.B)
  val slv_ack		= RegInit(false.B)
- val bus_type		= RegInit(false.B)
  val bus_busy		= RegInit(false.B)
 
   val field = Seq(
@@ -182,7 +183,7 @@ lazy val module = new LazyModuleImp(this){
 
       0x3C -> RegFieldGroup("I3C_config_reg", Some("I3C Configuration Register"),
 	 Seq(   RegField(1,config_done, 	RegFieldDesc("config_done", "This is set when host has completed configuration the I3C Master")), 
-		RegField(1),
+		RegField(1,load_done,		RegFieldDesc("load_done","This bit is set when host has completed sending Slave info.")),
 		RegField(1,readWrite,		RegFieldDesc("readWrite", "0 --> Write/1 --> Read")),
 		RegField(4,slaveID,		RegFieldDesc("slaveID", "SlaveID of the currect slave", reset=Some(0))),
 		RegField(1,i3c_mode,		RegFieldDesc("i3c_mode", "0 --> SDR/ 1 --> HDR" )),
@@ -197,18 +198,18 @@ lazy val module = new LazyModuleImp(this){
 /*
       0x40 -> RegFieldGroup("bus_status_reg", Some("Specifies the general status of I3C Master"),
 	 Seq(   RegField.r(1,bus_busy, 		RegFieldDesc("bus_busy", "0 --> Can accept new req from host;1 --> busy in processing previous req" )), 
-		RegField.r(1,bus_type,		RegFieldDesc("bus_type", "0 --> I3C ; 1 --> I2C" )),
 		RegField.r(1,slv_ack,		RegFieldDesc("slv_ack", "Previous request was served 0 --> unsuccessful/ 1 -->successful" )),
-		RegField.r(1,status_hdr,		RegFieldDesc("status_hdr", "Hotjoined 0-->not occured ; 1-->occured" )),
-		RegField.r(1,status_ibi,		RegFieldDesc("status_ibi", "In-band Interrupt req 0-->not occured ; 1-->occured" )),
+		RegField.r(1,read_valid,	RegFieldDesc("read_valid", "set by I3C Master when Read Data Register contains valid data requested by the Host" )),
+		RegField.r(1,status_hj,		RegFieldDesc("status_hj", "Hotjoined 0-->not occured ; 1-->occured" )),
+		RegField.r(1,status_ibi,	RegFieldDesc("status_ibi", "In-band Interrupt req 0-->not occured ; 1-->occured" )),
 		RegField.r(1,status_mst_req,	RegFieldDesc("status_mst_req", "Mastership req 0-->not occured ; 1-->occured" )),
 		RegField.r(1,status_grpaddr,	RegFieldDesc("status_grpaddr", "Group Addressing req 0-->not occured ; 1-->occured" )),
 		RegField.w1c(1,collision_detected,  RegFieldDesc("collision_detected", "0 --> Collision not detected; 1 --> Collision detected" )),
 		RegField.w1c(1,err_detected,	RegFieldDesc("err_detected", "0 -->No error detected; 1 --> Error detected" )),
 		RegField(11),
-		RegField.r(4,num_i3c_slv_without_stataddr,RegFieldDesc("num_i3c_slv_without_stataddr", "Number of I3C slaves without static address", reset=0)),
-		RegField.r(4,num_i3c_slv_stataddr,RegFieldDesc("num_i3c_slv_stataddr", "Number of I3C slaves with static address", reset=0)),
-		RegField.r(4,num_i2c_slv,		RegFieldDesc("num_i2c_slv","Number of I2C slaves", reset=0))))
+		RegField.r(4,num_i3c_slv_without_stataddr,RegFieldDesc("num_i3c_slv_without_stataddr", "Number of I3C slaves without static address", reset=Some(0))),
+		RegField.r(4,num_i3c_slv_stataddr,RegFieldDesc("num_i3c_slv_stataddr", "Number of I3C slaves with static address", reset=Some(0))),
+		RegField.r(4,total_num_slv,		RegFieldDesc("total_num_slv","Total number of slaves", reset=Some(0)))))
 */
 
 )
