@@ -1974,37 +1974,13 @@ class I3CMaster_C1 extends Module{
 		val configc 		= Input(new ConfigC)
 		val statusc 		= Output(new StatusC)
 		val dataregc 		= new DataregC
-		//val dataregTx_B 	= Input(Vec(4, UInt(8.W)))
-        	//val dataregRx_B 	= Output(Vec(8, UInt(8.W)))		
 	
 		val c2_input		= Output(new C2_input)
 		val c2_output		= Input(new C2_output)
 		val rtl_clk		= Output(Clock())
 		val rtl_rst		= Output(Bool())
-		//****** for peek-poke testers*****
-		val state_initial 	= Output(UInt(1.W))
-		val state_i3c 		= Output(UInt(1.W))
-		val state_noti3c 	= Output(UInt(1.W))
-		val state_bw 		= Output(UInt(1.W))
-		val state_dw 		= Output(UInt(1.W))
-		val state_dr 		= Output(UInt(1.W))
-		val state_privaterw 	= Output(UInt(1.W))
-		val state_privater 	= Output(UInt(1.W))
-		val state_privatew 	= Output(UInt(1.W))
-		val state_entdaa 	= Output(UInt(1.W))
-		val state_entdaarep 	= Output(UInt(1.W))
-		val def_slaveinfo	= Output(UInt(1.W))
-		val def_entdaarepitition= Output(UInt(1.W))
-		val check_otherwise	= Output(Bool())
-		val count_done		= Output(UInt(2.W))
 
 })
-	/*
-	val configregc = RegInit(0.U.asTypeOf(new ConfigC))
-	//val configregc = RegInit(0.U.asTypeOf(io.configc))
-	io.statusc := RegInit(0.U.asTypeOf(new StatusC))
-	//io.dataregc := RegInit(VecInit(Seq.fill(4)(0.U(8.W))))
-	*/
 
 	val configregc_configEn = RegInit(false.B)
 	val configregc_as 	= RegInit(0.U(2.W))	
@@ -2064,51 +2040,13 @@ class I3CMaster_C1 extends Module{
 	val c2out_reg = RegInit(0.U.asTypeOf(new C2_output))
 	io.c2_input := RegInit(0.U.asTypeOf(new C2_input))
 
-	val state_initial_reg 	= RegInit(0.U(1.W))
-	val state_i3c_reg 	= RegInit(0.U(1.W))
-	val state_noti3c_reg 	= RegInit(0.U(1.W))
-	val state_bw_reg 	= RegInit(0.U(1.W))
-	val state_dw_reg 	= RegInit(0.U(1.W))
-	val state_dr_reg	= RegInit(0.U(1.W))
-	val state_privaterw_reg = RegInit(0.U(1.W))
-	val state_privater_reg 	= RegInit(0.U(1.W))
-	val state_privatew_reg 	= RegInit(0.U(1.W))
-	val state_entdaa_reg 	= RegInit(0.U(1.W))
-	val state_entdaarep_reg = RegInit(0.U(1.W))
-	
-	val checkotherwise = RegInit(false.B)	
-
-	io.state_initial 	:= state_initial_reg
-	io.state_i3c 	 	:= state_i3c_reg
-	io.state_noti3c  	:= state_noti3c_reg
-	io.state_bw 	 	:= state_bw_reg
-	io.state_dw 	 	:= state_dw_reg
-	io.state_dr 		:= state_dr_reg
-	io.state_privaterw 	:= state_privaterw_reg
-	io.state_privater 	:= state_privater_reg
-	io.state_privatew 	:= state_privatew_reg
-	io.state_entdaa 	:= state_entdaa_reg
-	io.state_entdaarep 	:= state_entdaarep_reg
-	io.check_otherwise 	:= checkotherwise
 
 	val rtl_rst_reg = RegInit(false.B)	
 	io.rtl_rst := rtl_rst_reg
-
-	val def_entdaarepitition_reg = RegInit(0.U(1.W))
-	val def_slaveinfo_reg = RegInit(0.U(1.W))
-	io.def_slaveinfo := def_slaveinfo_reg
-	io.def_entdaarepitition := def_entdaarepitition_reg
-
 	
 	val clockI3C = Pow2ClockDivider(4)
 	io.rtl_clk := clockI3C
-	//  io.rtl_clk := true.B
- 	//val withclockI3C = withClock(clockI3C){Module(new Shiftreg)}
 	
-
-	val countdone = RegInit(0.U(2.W))
-	io.count_done := countdone	
-
 	/*
 	*states for the fsm
 	*/
@@ -2142,8 +2080,6 @@ class I3CMaster_C1 extends Module{
 		val tbit = tbitcalculator(data)
 		io.c2_input.dataTx := Cat(data,tbit)
 		updatedst()
-		//Counter(true.B,128)
-		//io.statusc.dst := 1.U
 	}
 	def datawithTbitrep():Unit = {
 		when(dataregTx_B_reg(0) =/= 0.U){
@@ -2172,22 +2108,8 @@ class I3CMaster_C1 extends Module{
 		}
 	}
 	
-	/*
-	def datareaddelay(data_delay:UInt):Unit={
-		val enable = RegInit(true.B)
-                val (countvalue, countwrap) = Counter(enable,145)
-                when (countvalue === 144.U){
-                        
-                         enable := false.B
-                }
-                .otherwise{
-                         statusregc_dst = 0.U
-                }
-	}
-	*/
 
 	def readdata(data:UInt):Unit = {
-		//Counter(true.B, 144)
 		val enable = RegInit(true.B)
 		val (countvalue,countwrap) = Counter(enable, 145)
 		when(countvalue === 144.U){
@@ -2199,17 +2121,14 @@ class I3CMaster_C1 extends Module{
 			data := 0.U
 			statusregc_t := 0.U
 		}
-		//io.statusc.DSR := 1.U	
 	}
 	def readdatarep():Unit = {
 		readdata(dataregRx_B_reg(0))
 		when(configregc_abtR === 1.U){
 			when(configregc_srP === 0.U){
-				//PullUpStructure(false.B, true.B, false.B, false.B, false.B)
 				io.c2_input.repeated_start_bit := 1.U
 			}
 			.elsewhen(configregc_srP === 1.U){
-				//PullUpStructure(false.B, false.B, true.B, false.B, false.B)
 				io.c2_input.stop_bit := 1.U
 			}
 		}
@@ -2217,11 +2136,9 @@ class I3CMaster_C1 extends Module{
 			readdata(dataregRx_B_reg(1))
 			when(configregc_abtR === 1.U){
 				when(configregc_srP === 0.U){
-					//PullUpStructure(false.B, true.B, false.B, false.B, false.B)
 					io.c2_input.repeated_start_bit := 1.U
 				}
 				.elsewhen(configregc_srP === 1.U){
-					//PullUpStructure(false.B, false.B, true.B, false.B, false.B)
 					io.c2_input.stop_bit := 1.U
 				}
 			}
@@ -2229,11 +2146,9 @@ class I3CMaster_C1 extends Module{
 				readdata(dataregRx_B_reg(2))
 				when(configregc_abtR === 1.U){
 					when(configregc_srP === 0.U){
-						//PullUpStructure(false.B, true.B, false.B, false.B, false.B)
 						io.c2_input.repeated_start_bit := 1.U
 					}
 					.elsewhen(configregc_srP === 1.U){
-						//PullUpStructure(false.B, false.B, true.B, false.B, false.B)
 						io.c2_input.stop_bit := 1.U
 					}
 				}		
@@ -2283,35 +2198,16 @@ class I3CMaster_C1 extends Module{
 
 	}
 	
-	def somedelay(count:Int):Unit={
-		val enable = RegInit(true.B)
-		val updatecount:Int = count + 1
-		val (countvalue, countwrap) = Counter(enable, updatecount)
-		if(countvalue == count){
-			countdone := 1.U
-			enable := false.B		
-		}
-		else{
-			countdone := 2.U	
-		}
-	}
 	
 	def broadcastwriteCCC():Unit = {
 		when(configregc_s === 1.U){
-			//PullUpstructure(true.B, false.B, false.B, false.B, false.B)
 			io.c2_input.start_bit := 1.U
 		}
 			when(dataregTx_B_reg(0) =/= 0.U){
 				io.c2_input.dataTx := Cat(dataregTx_B_reg(0),0.U)
-				//Counter(true.B,128)
-				//val acknack = PullUpstructure(false.B,false.B,false.B,true.B,false.B)
 				controlackHdelay()
 				updateackB()
-				//io.c2_input.acknack_H_bit := 1.U
-				//Counter(true.B,16)
-				//io.statusc.an := c2out_reg.acknack_rcvd_bit
 				dataregTx_B_reg(0) := 0.U
-				//Counter(true.B,3)
 				datawithTbitrep()
 			}
 			.otherwise{
@@ -2323,138 +2219,96 @@ class I3CMaster_C1 extends Module{
 	}
 	def directRW(rw :Bool):Unit = {
 		when(configregc_s === 1.U){
-			//PullUpstructure(true.B, false.B, false.B, false.B, false.B)
 			io.c2_input.start_bit := 1.U
 		}
 			when(dataregTx_B_reg(0) =/= 0.U){
 				io.c2_input.dataTx := Cat(dataregTx_B_reg(0),0.U)
-				//Counter(true.B,128)
-				//val acknack = PullUpstructure(false.B,false.B,false.B,true.B,false.B)
-				//io.c2_input.acknack_H_bit := 1.U
-				//Counter(true.B,16)
-				//io.statusc.an := c2out_reg.acknack_rcvd_bit
 				controlackHdelay()
 				updateackB()
 				dataregTx_B_reg(0) := 0.U
-				//Counter(true.B,3)
 				when(dataregTx_B_reg(0) =/= 0.U){
 					datawithTbit(dataregTx_B_reg(0))
 					dataregTx_B_reg(0) := 0.U
-					//Counter(true.B, 3)
 					when(configregc_srP === 0.U){
-						//PullUpstructure(false.B,true.B,false.B,false.B,false.B)
 						io.c2_input.repeated_start_bit := 1.U
 						when(dataregTx_B_reg(0) =/= 0.U){
 							io.c2_input.dataTx := Cat(dataregTx_B_reg(0),0.U)
-							//Counter(true.B,128)
 							when(!rw){
-								//val acknack = PullUpstructure(false.B,false.B,false.B,true.B,false.B)
-								//io.c2_input.acknack_H_bit := 1.U
 								controlackHdelay()
 								updateackB()
-								//Counter(true.B,16)
-								//io.statusc.an := c2out_reg.acknack_rcvd_bit
 								dataregTx_B_reg(0) := 0.U
-								//Counter(true.B,3)
 								datawithTbitrep()
 							}
 							.otherwise{
-								//val acknack = PullUpstructure(false.B,false.B,false.B,false.B,true.B)
-								//io.c2_input.acknack_noH_bit := 1.U
 								controlacknoHdelay()
 								updateackB()
-								//Counter(true.B,16)
-								//io.statusc.an := c2out_reg.acknack_rcvd_bit
 								dataregTx_B_reg(0) := 0.U
-								//Counter(true.B,3)
 								readdatarep()
 							}		
 						}
 						.otherwise{
-							//delay??
+							//delay
 						}
 					}
 					.otherwise{
-						//delay??
+						//delay
 					}
 						
 				}
 				.otherwise{
-					//delay??
+					//delay
 				}
 			}
 			.otherwise{
-				//delay??
+				//delay
 			}
 	}
 	def privateRW(rw :Bool):Unit = {
 		when(configregc_s === 1.U){
-			//PullUpstructure(true.B, false.B, false.B, false.B, false.B)
 			io.c2_input.start_bit := 1.U
 		}
 			when(dataregTx_B_reg(0) =/= 0.U){
 				io.c2_input.dataTx := Cat(dataregTx_B_reg(0),0.U)
-				//Counter(true.B,128)
-				//val acknack = PullUpstructure(false.B,false.B,false.B,true.B,false.B)
-				//io.c2_input.acknack_H_bit := 1.U
 				controlackHdelay()
 				updateackB()
-				//Counter(true.B,16)
-				//io.statusc.an := c2out_reg.acknack_rcvd_bit
 				dataregTx_B_reg(0) := 0.U
-				//Counter(true.B,3)
 				when(configregc_srP === 0.U){
-					//PullUpstructure(false.B,true.B,false.B,false.B,false.B)
 					io.c2_input.repeated_start_bit := 1.U
 					when(dataregTx_B_reg(0) =/= 0.U){
 						io.c2_input.dataTx := Cat(dataregTx_B_reg(0),0.U)
-						//Counter(true.B,128)
 						when(!rw){
-							//val acknack = PullUpstructure(false.B,false.B,false.B,true.B,false.B)
-							//io.c2_input.acknack_H_bit := 1.U
 							controlackHdelay()
 							updateackB()
-							//Counter(true.B,16)
-							//io.statusc.an := c2out_reg.acknack_rcvd_bit
 							dataregTx_B_reg(0) := 0.U
-							//Counter(true.B,3)
 							datawithTbitrep()
 							}
 						.otherwise{
-							//val acknack = PullUpstructure(false.B,false.B,false.B,false.B,true.B)
-							//io.c2_input.acknack_noH_bit := 1.U
 							controlacknoHdelay()
 							updateackB()
-							//Counter(true.B,16)
-							//io.statusc.an := c2out_reg.acknack_rcvd_bit
 							dataregTx_B_reg(0) := 0.U
-							//Counter(true.B,3)
 							readdatarep()
 							}		
 					}
 					.otherwise{
-						//delay??
+						//delay
 					}
 				}
 				.otherwise{
-					//delay??
+					//delay
 				}
 						
 			}
 			.otherwise{
-				//delay??
+				//delay
 			}
 	}
 	def slaveinfo():Unit = {
-		def_slaveinfo_reg := 1.U
 		readdata(dataregRx_B_reg(0))
 		when(configregc_abtR === 1.U){
 			when(configregc_srP === 0.U){
-				//PullUpStructure(false.B, true.B, false.B, false.B, false.B)
 				io.c2_input.repeated_start_bit := 1.U
 			}
 			.elsewhen(configregc_srP === 1.U){
-				//PullUpStructure(false.B, false.B, true.B, false.B, false.B)
 				io.c2_input.stop_bit := 1.U
 			}
 		}
@@ -2462,11 +2316,9 @@ class I3CMaster_C1 extends Module{
 			readdata(dataregRx_B_reg(1))
 			when(configregc_abtR === 1.U){
 				when(configregc_srP === 0.U){
-					//PullUpStructure(false.B, true.B, false.B, false.B, false.B)
 					io.c2_input.repeated_start_bit := 1.U
 				}
 				.elsewhen(configregc_srP === 1.U){
-					//PullUpStructure(false.B, false.B, true.B, false.B, false.B)
 					io.c2_input.stop_bit := 1.U
 				}
 			}
@@ -2474,11 +2326,9 @@ class I3CMaster_C1 extends Module{
 				readdata(dataregRx_B_reg(2))
 				when(configregc_abtR === 1.U){
 					when(configregc_srP === 0.U){
-						//PullUpStructure(false.B, true.B, false.B, false.B, false.B)
 						io.c2_input.repeated_start_bit := 1.U
 					}
 					.elsewhen(configregc_srP === 1.U){
-						//PullUpStructure(false.B, false.B, true.B, false.B, false.B)
 						io.c2_input.stop_bit := 1.U
 					}
 				}		
@@ -2486,11 +2336,9 @@ class I3CMaster_C1 extends Module{
 					readdata(dataregRx_B_reg(3))
 					when(configregc_abtR === 1.U){
 						when(configregc_srP === 0.U){
-							//PullUpStructure(false.B, true.B, false.B, false.B, false.B)
 							io.c2_input.repeated_start_bit := 1.U
 						}
 						.elsewhen(configregc_srP === 1.U){
-							//PullUpStructure(false.B, false.B, true.B, false.B, false.B)
 							io.c2_input.stop_bit := 1.U
 						}
 				
@@ -2499,11 +2347,9 @@ class I3CMaster_C1 extends Module{
 						readdata(dataregRx_B_reg(4))
 						when(configregc_abtR === 1.U){
 							when(configregc_srP === 0.U){
-								//PullUpStructure(false.B, true.B, false.B, false.B, false.B)
 								io.c2_input.repeated_start_bit := 1.U
 							}
 							.elsewhen(configregc_srP === 1.U){
-								//PullUpStructure(false.B, false.B, true.B, false.B, false.B)
 								io.c2_input.stop_bit := 1.U
 							}
 						}
@@ -2511,11 +2357,9 @@ class I3CMaster_C1 extends Module{
 							readdata(dataregRx_B_reg(5))
 							when(configregc_abtR === 1.U){
 								when(configregc_srP === 0.U){
-									//PullUpStructure(false.B, true.B, false.B, false.B, false.B)
 									io.c2_input.repeated_start_bit := 1.U
 								}
 								.elsewhen(configregc_srP === 1.U){
-									//PullUpStructure(false.B, false.B, true.B, false.B, false.B)
 									io.c2_input.stop_bit := 1.U
 								}
 							}		
@@ -2523,11 +2367,9 @@ class I3CMaster_C1 extends Module{
 								readdata(dataregRx_B_reg(6))
 								when(configregc_abtR === 1.U){
 									when(configregc_srP === 0.U){
-										//PullUpStructure(false.B, true.B, false.B, false.B, false.B)
 										io.c2_input.repeated_start_bit := 1.U
 									}
 									.elsewhen(configregc_srP === 1.U){
-										//PullUpStructure(false.B, false.B, true.B, false.B, false.B)
 										io.c2_input.stop_bit := 1.U
 									}
 								}
@@ -2545,16 +2387,10 @@ class I3CMaster_C1 extends Module{
 	}
 	def entdaarepitition():Unit = {		
 		when(configregc_srP === 0.U){
-			//PullUpstructure(false.B, true.B, false.B, false.B, false.B)
 			io.c2_input.repeated_start_bit := 1.U
 		
 			when(dataregTx_B_reg(0) =/= 0.U){
 				io.c2_input.dataTx := Cat(dataregTx_B_reg(0),0.U)
-				//Counter(true.B,128)
-				//val acknack1 = PullUpstructure(false.B,false.B,false.B,true.B,false.B)
-				//io.c2_input.acknack_H_bit := 1.U
-				//Counter(true.B,16)
-				//io.statusc.an := c2out_reg.acknack_rcvd_bit
 				controlackHdelay()
 				updateackB()
 				dataregTx_B_reg(0) := 0.U
@@ -2562,11 +2398,6 @@ class I3CMaster_C1 extends Module{
 				//delay
 				when(dataregTx_B_reg(0) =/= 0.U){
 					io.c2_input.dataTx := Cat(dataregTx_B_reg(0), 0.U)
-					//Counter(true.B, 128)
-					//val acknack2 = PullUpstructure(false.B, false.B, false.B, true.B, false.B)
-					//io.c2_input.acknack_H_bit := 1.U
-					//Counter(true.B, 16)
-					//io.statusc.an := c2out_reg.acknack_rcvd_bit
 					controlackHdelay()
 					updateackB()
 				}
@@ -2581,40 +2412,31 @@ class I3CMaster_C1 extends Module{
 		.otherwise{
 			//delay
 		}
-		def_entdaarepitition_reg := 1.U
 	}
 	def entdaaprocess():Unit = {
 		when(configregc_s === 1.U){
-			//PullUpstructure(true.B, false.B, false.B, false.B, false.B)
 			io.c2_input.start_bit := 1.U
 		}
 		when(dataregTx_B_reg(0) =/= 0.U){
 			io.c2_input.dataTx := Cat(dataregTx_B_reg(0),0.U)
-			//Counter(true.B,128)
-			//val acknack = PullUpstructure(false.B,false.B,false.B,true.B,false.B)
-			//io.c2_input.acknack_H_bit := 1.U
-			//Counter(true.B,16)
-			//io.statusc.an := c2out_reg.acknack_rcvd_bit
 			controlackHdelay()
 			updateackB()
 			dataregTx_B_reg(0) := 0.U
-			//Counter(true.B,3)
 			when(dataregTx_B_reg(0) =/= 0.U){
 				datawithTbit(dataregTx_B_reg(0))
 				dataregTx_B_reg(0) := 0.U
 			}
 			.otherwise{
-				//delay??
+				//delay
 			}
 			}
 		.otherwise{
-			//delay??
+			//delay
 		}
 	}
 	
 	switch (stateReg){
 		is (initial){
-			state_initial_reg := 1.U
 			when(configregc_configEn){
 				when(configregc_ini === 0.U){
 					stateReg := i3c
@@ -2625,12 +2447,10 @@ class I3CMaster_C1 extends Module{
 			}
 			.otherwise{
 				//delay
-				checkotherwise := configregc_configEn
 			}
 		}
 		
 		is (i3c){
-			state_i3c_reg := 1.U
 			when(configregc_sdr === 1.U){
 				statusregc_statusEn := true.B
 				when(configregc_cccNccc === 1.U){
@@ -2660,20 +2480,15 @@ class I3CMaster_C1 extends Module{
 		}
 		
 		is (noti3c){
-			state_noti3c_reg := 1.U
-			somedelay(3)
 		}
 
 		is (bw){
-			state_bw_reg := 1.U
 			broadcastwriteCCC()
 			when(configregc_srP === 0.U){
-				//PullUpstructure(false.B, true.B, false.B, false.B, false.B)
 				io.c2_input.repeated_start_bit := 1.U
 				stateReg := bw
 			}
 			.elsewhen(configregc_srP === 1.U){
-				//PullUpstructure(false.B, false.B, true.B, false.B, false.B)
 				io.c2_input.stop_bit := 1.U
 				stateReg := initial
 			}
@@ -2683,15 +2498,12 @@ class I3CMaster_C1 extends Module{
 		}
 
 		is (dw){
-			state_dw_reg := 1.U
 			directRW(false.B)
 			when(configregc_srP === 0.U){
-				//PullUpstructure(false.B, true.B, false.B, false.B, false.B)
 				io.c2_input.repeated_start_bit := 1.U
 				stateReg := dw
 			}
 			.elsewhen(configregc_srP === 1.U){
-				//PullUpstructure(false.B, false.B, true.B, false.B, false.B)
 				io.c2_input.stop_bit := 1.U
 				stateReg := initial
 			}
@@ -2701,15 +2513,12 @@ class I3CMaster_C1 extends Module{
 		}
 
 		is (dr){
-			state_dr_reg := 1.U
 			directRW(true.B)
 			when(configregc_srP === 0.U){
-				//PullUpstructure(false.B, true.B, false.B, false.B, false.B)
 				io.c2_input.repeated_start_bit := 1.U
 				stateReg := dr
 			}
 			.elsewhen(configregc_srP === 1.U){
-				//PullUpstructure(false.B, false.B, true.B, false.B, false.B)
 				io.c2_input.stop_bit := 1.U
 				stateReg := initial
 			}
@@ -2719,7 +2528,6 @@ class I3CMaster_C1 extends Module{
 		}
 
 		is (privaterw){
-			state_privaterw_reg := 1.U
 			when(configregc_rw === 0.U){
 				stateReg := privatew
 			}
@@ -2733,15 +2541,12 @@ class I3CMaster_C1 extends Module{
 		}
 
 		is (privatew){
-			state_privatew_reg := 1.U
 			privateRW(false.B)
 			when(configregc_srP === 0.U){
-				//PullUpstructure(false.B, true.B, false.B, false.B, false.B)
 				io.c2_input.repeated_start_bit := 1.U
 				stateReg := privatew
 			}
 			.elsewhen(configregc_srP === 1.U){
-				//PullUpstructure(false.B, false.B, true.B, false.B, false.B)
 				io.c2_input.stop_bit := 1.U
 				stateReg := initial
 			}
@@ -2751,15 +2556,12 @@ class I3CMaster_C1 extends Module{
 		}
 
 		is (privater){
-			state_privater_reg := 1.U
 			privateRW(true.B)
 			when(configregc_srP === 0.U){
-				//PullUpstructure(false.B, true.B, false.B, false.B, false.B)
 				io.c2_input.repeated_start_bit := 1.U
 				stateReg := privater
 			}
 			.elsewhen(configregc_srP === 1.U){
-				//PullUpstructure(false.B, false.B, true.B, false.B, false.B)
 				io.c2_input.stop_bit := 1.U
 				stateReg := initial
 			}
@@ -2769,7 +2571,6 @@ class I3CMaster_C1 extends Module{
 		}
 
 		is (entdaa){
-			state_entdaa_reg := 1.U
 			entdaaprocess()
 			stateReg := entdaarep
 					
@@ -2777,8 +2578,6 @@ class I3CMaster_C1 extends Module{
 		
 		
 		is (entdaarep){
-			state_entdaarep_reg := 1.U
-			//entdaarepitition()
 			entdaarepitition()
 			when(configregc_srP === 0.U){
 				stateReg := entdaarep
@@ -2838,22 +2637,9 @@ class I3CMasterOutputControl  extends BlackBox(Map()){
 class I3CMaster_C2(implicit p : Parameters) extends LazyModule{
 
 	lazy val module = new LazyModuleImp(this){
-	//	val rtl_outputcontrol 	= Module(new outputcontrol_rtl())
 		val rtl_outputcontrol 	= Module(new I3CMasterOutputControl())
-	
 		val i3cmaster_c1  	= Module(new I3CMaster_C1())
-		
-		/*
-		val acknackrcvd_reg = RegInit(0.U(1.W))
-		val data_out_reg = RegInit(0.U(1.W))
-		val data_out_last_reg = RegInit(0.U(1.W))
-		val busy_reg = RegInit(0.U(1.W))
-		val bus_control_reg = RegInit(0.U(1.W))
-		val bus_active_reg = RegInit(0.U(1.W))
-		*/
-		
-		//rtl_outputcontrol.io.acknack_rcvd := acknackrcvd_reg
-	
+			
 		rtl_outputcontrol.io.clk 		:= i3cmaster_c1.io.rtl_clk
 		rtl_outputcontrol.io.rst 		:= i3cmaster_c1.io.rtl_rst
 		rtl_outputcontrol.io.prescale 		:= i3cmaster_c1.io.c2_input.prescale

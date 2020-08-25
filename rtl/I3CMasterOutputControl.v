@@ -1,26 +1,26 @@
 `timescale 1ns / 1ps
 
 /*
- *  * I2C master
- *   */
+ I2C master
+*/
 module I3CMasterOutputControl (
     input  wire        clk,
     input  wire        rst,
     inout  wire 	   sda_pin,
     inout  wire 	   scl_pin,
   
-    /*
- *      * Configuration
- *           */
-    input  wire [15:0] prescale,
-    input  wire        stop_on_idle,
-    input  wire	       start,
-    input  wire	       repeated_start,
-    input  wire		   stop,
-    input  wire		   acknack_H,
-    input  wire		   acknack_noH,
-    input  wire		   datatx,
-    input  wire		   datarx,
+/*
+* Configuration
+*/
+    	input  wire [15:0] prescale,
+    	input  wire        stop_on_idle,
+    	input  wire	   start,
+    	input  wire	   repeated_start,
+    	input  wire	   stop,
+    	input  wire	   acknack_H,
+    	input  wire	   acknack_noH,
+    	input  wire	   datatx,
+    	input  wire	   datarx,
   	
   
   	input  wire [8:0]  data_in,
@@ -29,22 +29,22 @@ module I3CMasterOutputControl (
   	output wire [8:0]  data_out,
     	output wire        data_out_last,
 	output wire        acknack_rcvd,
-    /*
- *      * I3C interface
- *           */
-    input  wire        scl_i,
-    output wire        scl_o,
-    input wire        scl_en,
-    input  wire        sda_i,
-    output wire        sda_o,
-    input wire        sda_en,
+/*
+ *I3C interface
+*/
+    	input  wire        scl_i,
+    	output wire        scl_o,
+   	input wire        scl_en,
+    	input  wire        sda_i,
+    	output wire        sda_o,
+    	input wire        sda_en,
 
-    /*
- *      * Status
- *           */
-    output wire        busy,
-    output wire        bus_control,
-    output wire        bus_active
+/*
+* Status
+*/
+    	output wire        busy,
+    	output wire        bus_control,
+    	output wire        bus_active
     
 );
 
@@ -114,8 +114,6 @@ localparam [3:0]
 
   reg scl_o_reg = 1'b1, scl_o_next;
   reg sda_o_reg = 1'b1, sda_o_next;
-//reg scl_en_reg = scl_en;
-//reg sda_en_reg = sda_en;
   
   reg last_scl_i_reg = 1'b1;
   reg last_sda_i_reg = 1'b1;
@@ -130,9 +128,7 @@ localparam [3:0]
   assign data_out_last = data_out_last_reg;
 
   assign scl_o = scl_o_reg;
-  //assign scl_en = scl_en_reg;
   assign sda_o = sda_o_reg;
-  //assign sda_en = sda_en_reg;
 
   assign busy 		= busy_reg;
   assign bus_active 	= bus_active_reg;
@@ -170,8 +166,6 @@ always @* begin
     data_out_last_next 	= data_out_last_reg;
 
     acknack_rcvd_next = 1'b0;
-    //scl_en_reg = 1'b0;
-    //sda_en_reg = 1'b0;
   			
   	// generate delays
   	if (phy_state_reg != PHY_STATE_INITIAL && phy_state_reg != PHY_STATE_ACTIVE) begin
@@ -289,9 +283,6 @@ always @(*) begin
 
     bus_control_next = bus_control_reg;
 	if (phy_release_bus) begin
-	//release bus and return to idle state
- 	//scl_en_reg = 1'b1;
-        //sda_en_reg = 1'b1;
  
         sda_o_next = 1'b1;
         scl_o_next = 1'b1;
@@ -320,22 +311,8 @@ always @(*) begin
     end else begin
         case (phy_state_reg)
             PHY_STATE_INITIAL: begin
-                /*
- * 		// bus idle - wait for start command
- * 		              	//scl_en_reg = 1'b1;
- * 		              	      		//sda_en_reg = 1'b1;
- * 		              	      				*/
                 sda_o_next = 1'b1;
                 scl_o_next = 1'b1;
-		/*
-                if (phy_start_bit) begin
-                    sda_o_next = 1'b0;
-                    delay_next = prescale;
-                    phy_state_next = PHY_STATE_START_1;
-                end else begin
-                    phy_state_next = PHY_STATE_INITIAL;
-                end
-		*/
 		phy_state_next = PHY_STATE_ACTIVE;
             end
             PHY_STATE_ACTIVE: begin
@@ -481,13 +458,6 @@ always @(posedge clk) begin
         delay_reg <= 16'd0;
         delay_scl_reg <= 1'b0;
         delay_sda_reg <= 1'b0;
-	/*
- *         cmd_ready_reg <= 1'b0;
- *                 data_in_ready_reg <= 1'b0;
- *                         data_out_valid_reg <= 1'b0;
- *                               	scl_en_reg = 1'b1;
- *                               	      	sda_en_reg = 1'b1;
- *                               	      		*/        
         scl_o_reg <= 1'b1;
         sda_o_reg <= 1'b1;
         busy_reg <= 1'b0;
@@ -503,11 +473,6 @@ always @(posedge clk) begin
         delay_scl_reg <= delay_scl_next;
         delay_sda_reg <= delay_sda_next;
 
-	/*
- *         cmd_ready_reg <= cmd_ready_next;
- *                 data_in_ready_reg <= data_in_ready_next;
- *                         data_out_valid_reg <= data_out_valid_next;
- *                         	*/	
 
         scl_o_reg <= scl_o_next;
         sda_o_reg <= sda_o_next;
@@ -527,16 +492,9 @@ always @(posedge clk) begin
 
     phy_rx_data_reg <= phy_rx_data_next;
 
-    /*addr_reg <= addr_next;
- *     */
     data_reg <= data_next;
     last_reg <= last_next;
 
-  /*
- *     mode_read_reg <= mode_read_next;
- *         mode_write_multiple_reg <= mode_write_multiple_next;
- *             mode_stop_reg <= mode_stop_next;
- *             	*/
 
     bit_count_reg <= bit_count_next;
 
@@ -554,14 +512,6 @@ end
   assign sda_i = sda_pin;
   assign sda_pin = sda_en ? sda_o : 1'bz;
 
-  /*
- *   initial begin
- *        Dump waves
- *            $dumpfile("dump.vcd");
- *                $dumpvars(1);
- *                    forever #10 clk = ~clk;
- *                      end
- *                        */
 
 endmodule
 
