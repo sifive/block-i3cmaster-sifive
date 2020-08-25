@@ -35,10 +35,6 @@ def makeI3CMasterSkeletonDUTPlan name blocks =
   makeRocketChipDUTPlan name sifiveSkeletonScalaModule testharness config
   | setRocketChipDUTPlanCustomOverlay (Some customOverlay)
 
-# def makeI3CMasterSkeletonDUTPlan name blocks =
-#   def testharness = "sifive.blocks.i3cmaster.TestSocHarness"
-#   def config = "sifive.skeleton.DefaultConfig"
-#   makeRocketChipDUTPlan name sifiveSkeletonScalaModule testharness config
 
 def makeI3CMasterTestSocketDUT name blocks =
   def baseDUT =
@@ -50,6 +46,14 @@ global def i3cmasterDUT config =
   def name = "i3cmasterDUT"
   def blocks = testBlock config, Nil
   makeI3CMasterTestSocketDUT name blocks
+
+
+def outputcontrolHook = 
+  makeBlackBoxHook "I3CMasterOutputControl" (editDUTSimCompileOptionsSourceFiles (source "{workspaceroot}/rtl/I3CMasterOutputControl.v", _))
+
+publish dutSimCompileOptionsHooks = outputcontrolHook, Nil
+
+
 
 
 publish dutTests = i3cmasterConfig0Test,Nil
