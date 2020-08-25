@@ -1,7 +1,7 @@
 # block-i3cmaster-sifive
 This is a repository for Improved inter-integrated circuit master.
 
-source /india/cshrc/master.cshrc 
+source /india/cshrc/master.cshrc \\
 source /india/proj_sifive_ip/tools/rhel_cshrc
 set path = ( /india/proj_sifive_ip/users/kritikb/tools/install/ruby-2.5.7/bin $path )
 setenv WAKE_PATH $PATH
