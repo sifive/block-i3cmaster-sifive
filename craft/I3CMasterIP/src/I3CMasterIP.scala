@@ -51,14 +51,12 @@ lazy val module = new LazyModuleImp(this){
  val blockc1		= Module(new I3CMaster_C1)
  val blockc2		= LazyModule(new I3CMaster_C2)
 // Inputs to MasterFSM from Block C
-// mfsm.io.statusC	:= WireDefault(0.U.asTypeOf(new StatusC))
+
    mfsm.io.statusC	<> blockc1.io.statusc
-//  mfsm.io.configC := WireDefault(0.U.asTypeOf(new ConfigC))
-//   mfsm.io.configC := RegInit(0.U.asTypeOf(new ConfigC))
    blockc1.io.configc   <> mfsm.io.configC
-// mfsm.io.dataregC.dataregRx := VecInit(Seq.fill(8) {0.U(8.W)})
    mfsm.io.dataregC.dataregRx := blockc1.io.dataregc.dataregRx
    blockc1.io.dataregc.dataregTx :=  mfsm.io.dataregC.dataregTx
+
 // c2 outputs 
    blockc1.io.c2_output := WireDefault(0.U.asTypeOf(new C2_output))
       
@@ -330,6 +328,9 @@ object I3CMaster {
 }
 }
 
+
+// Block - B code
+
 // BlockBReg.scala
 
 class Tisr1 extends Bundle {
@@ -403,7 +404,7 @@ class ConfigA extends Bundle {
  val readWrite	 = Bool()
  val config_done = Bool()
  val load_done	 = Bool()
- val abort 	 = Bool() // Should be reviewed by Block A 
+ val abort 	 = Bool()  
 }
 
 class DataA extends Bundle {
@@ -481,83 +482,43 @@ class DataregC extends Bundle{
 	val dataregTx = Input(Vec(4, UInt(8.W)))
 	val dataregRx = Output(Vec(8, UInt(8.W)))
 }
-/*
-class ConfigC extends Bundle {
-	val configEn	= Bool()
-        val as          = UInt(2.W)
-        val abtR        = UInt(1.W)
-        val hep         = UInt(1.W)
-        val hdrM        = UInt(2.W)
-        val bdccc       = UInt(1.W)
-        val rw          = UInt(1.W)
-        val sdr         = UInt(1.W)
-        val ini         = UInt(1.W)
-        val asss        = UInt(1.W)
-        val srP         = UInt(1.W)
-        val s           = UInt(1.W)
-        val cccNccc     = UInt(1.W)
-}
-
-
-class StatusC extends Bundle {
-	val statusEn	= Bool()
-        val an          = UInt(1.W)
-        val ab          = UInt(1.W)
-        val t          = UInt(1.W)
-        val sss         = UInt(1.W)
-        val mcs         = UInt(2.W)
-        val dsr         = UInt(1.W)
-        val dst         = UInt(1.W)
-        val bc          = UInt(2.W)
-}
-
-class DataregC extends Bundle {
-        val dataregTx = Input(Vec(4, UInt(8.W)))
-        val dataregRx = Output(Vec(8, UInt(8.W)))
-}
-*/
 
 // Sorting.scala
 
 class Sorting extends Module {
 val io = IO(new Bundle{
-// val nsetdasa = Input(UInt(4.W))
- val unsort = Input(Vec(11,UInt(7.W)))
-// val outunsort = Output(Vec(11,UInt(7.W)))
-// val outsort = Output(Vec(11,UInt(7.W)))
-//   val count_i = Output(UInt(4.W))
-//   val count_p = Output(UInt(4.W))
-     val sort = Output(Vec(11,UInt(7.W)))
-     val load = Input(Bool())
+     val unsort	 = Input(Vec(11,UInt(7.W)))
+     val sort	 = Output(Vec(11,UInt(7.W)))
+     val load	 = Input(Bool())
      val sort_done = Output(Bool())
 })
 
  
-val initvalues = Seq.fill(11){ 127.U(7.W)}
-val unsortReg = Reg(Vec(11,UInt()))
-val sortReg = RegInit(VecInit(initvalues))
-io.sort := unsortReg
-io.sort_done := 0.B
+val initvalues	 = Seq.fill(11){ 127.U(7.W)}
+val unsortReg	 = Reg(Vec(11,UInt()))
+val sortReg	 = RegInit(VecInit(initvalues))
+io.sort		 := unsortReg
+io.sort_done	 := 0.B
 
-val load_done = RegInit(0.U(1.W))
-val count_iter = RegInit(0.U(4.W))
-val count_pass = RegInit(0.U(4.W))
+val load_done	 = RegInit(0.U(1.W))
+val count_iter	 = RegInit(0.U(4.W))
+val count_pass	 = RegInit(0.U(4.W))
 
 when(io.load && load_done === 0.U )
 {
 
    unsortReg(10) := io.unsort(10)
-   unsortReg(9) := io.unsort(9)
-   unsortReg(8) := io.unsort(8)
-   unsortReg(7) := io.unsort(7)
-   unsortReg(6) := io.unsort(6)
-   unsortReg(5) := io.unsort(5)
-   unsortReg(4) := io.unsort(4)
-   unsortReg(3) := io.unsort(3)
-   unsortReg(2) := io.unsort(2)
-   unsortReg(1) := io.unsort(1)
-   unsortReg(0) := io.unsort(0)
-   load_done := 1.U
+   unsortReg(9)	 := io.unsort(9)
+   unsortReg(8)	 := io.unsort(8)
+   unsortReg(7)	 := io.unsort(7)
+   unsortReg(6)	 := io.unsort(6)
+   unsortReg(5)	 := io.unsort(5)
+   unsortReg(4)	 := io.unsort(4)
+   unsortReg(3)	 := io.unsort(3)
+   unsortReg(2)	 := io.unsort(2)
+   unsortReg(1)	 := io.unsort(1)
+   unsortReg(0)	 := io.unsort(0)
+   load_done	 := 1.U
 
 
 }.elsewhen( count_pass < 10.U && load_done === 1.U && io.load )
@@ -578,51 +539,51 @@ when(io.load && load_done === 0.U )
 	unsortReg(0) := "hFF".U
 
 	sortReg(10) := sortReg(9)
-	sortReg(9) := sortReg(8)
-	sortReg(8) := sortReg(7)
-	sortReg(7) := sortReg(6)
-	sortReg(6) := sortReg(5)
-	sortReg(5) := sortReg(4)
-	sortReg(4) := sortReg(3)
-	sortReg(3) := sortReg(2)
-	sortReg(2) := sortReg(1)
-	sortReg(1) := sortReg(0)
-	sortReg(0) := unsortReg(9)
+	sortReg(9)  := sortReg(8)
+	sortReg(8)  := sortReg(7)
+	sortReg(7)  := sortReg(6)
+	sortReg(6)  := sortReg(5)
+	sortReg(5)  := sortReg(4)
+	sortReg(4)  := sortReg(3)
+	sortReg(3)  := sortReg(2)
+	sortReg(2)  := sortReg(1)
+	sortReg(1)  := sortReg(0)
+	sortReg(0)  := unsortReg(9)
 
-	count_iter := count_iter + 1.U
+	count_iter  := count_iter + 1.U
 
 	}.elsewhen(unsortReg(10) <= unsortReg(9))
 	{
 	unsortReg(10) := unsortReg(9)
-	unsortReg(9) := unsortReg(8)
-        unsortReg(8) := unsortReg(7)
-        unsortReg(7) := unsortReg(6)
-        unsortReg(6) := unsortReg(5)
-        unsortReg(5) := unsortReg(4)
-        unsortReg(4) := unsortReg(3)
-        unsortReg(3) := unsortReg(2)
-        unsortReg(2) := unsortReg(1)
-        unsortReg(1) := unsortReg(0)
-        unsortReg(0) := "hFF".U
+	unsortReg(9)  := unsortReg(8)
+        unsortReg(8)  := unsortReg(7)
+        unsortReg(7)  := unsortReg(6)
+        unsortReg(6)  := unsortReg(5)
+        unsortReg(5)  := unsortReg(4)
+        unsortReg(4)  := unsortReg(3)
+        unsortReg(3)  := unsortReg(2)
+        unsortReg(2)  := unsortReg(1)
+        unsortReg(1)  := unsortReg(0)
+        unsortReg(0)  := "hFF".U
 
 	sortReg(10) := sortReg(9)
-	sortReg(9) := sortReg(8)
-	sortReg(8) := sortReg(7)
-	sortReg(7) := sortReg(6)
-	sortReg(6) := sortReg(5)
-	sortReg(5) := sortReg(4)
-	sortReg(4) := sortReg(3)
-	sortReg(3) := sortReg(2)
-	sortReg(2) := sortReg(1)
-	sortReg(1) := sortReg(0)
-	sortReg(0) := unsortReg(10)
+	sortReg(9)  := sortReg(8)
+	sortReg(8)  := sortReg(7)
+	sortReg(7)  := sortReg(6)
+	sortReg(6)  := sortReg(5)
+	sortReg(5)  := sortReg(4)
+	sortReg(4)  := sortReg(3)
+	sortReg(3)  := sortReg(2)
+	sortReg(2)  := sortReg(1)
+	sortReg(1)  := sortReg(0)
+	sortReg(0)  := unsortReg(10)
 
-	count_iter := count_iter + 1.U
+	count_iter  := count_iter + 1.U
 	}
 
     }.elsewhen(count_iter === 11.U)
 	{
-		unsortReg := sortReg
+		unsortReg  := sortReg
 		count_iter := 0.U
 		count_pass := count_pass + 1.U
 
@@ -630,22 +591,9 @@ when(io.load && load_done === 0.U )
 
 }.elsewhen(count_pass === 10.U)
 	{
-		io.sort_done := 1.B
-		io.sort := sortReg
+		io.sort_done	:= 1.B
+		io.sort 	:= sortReg
 	}
-
-
-//io.sort := sortReg
-
-//io.count_i := count_iter
-//io.count_p := count_pass
-//io.outsort := sortReg
-//io.outunsort := unsortReg
-
-
-
-
-
 
 }
 
@@ -696,7 +644,7 @@ object DaaFSM {
 			is("h020A00009000A1".U) { dynAddr := "h33".U }
 			is("h020A0000A000E2".U) { dynAddr := "h37".U }
 			is("h020A0000B00064".U) { dynAddr := "h3B".U }
-		//	is("h00000000000000".U) { dynAddr := "h30".U }
+		 //     is("h00000000000000".U) { dynAddr := "h30".U }		
 		}
 			
 		dynAddr
@@ -730,78 +678,23 @@ object DaaFSM {
 }
 
 
-class FinalBundle extends Bundle {
+class IObundle extends Bundle {
  val tisrA	 = Output(new TisrA)
  val configA	 = Input(new ConfigA)
  val slvInfoA	 = Input(new SlaveInfoA) 
  val configC	 = Output(new ConfigC)
  val statusC	 = Input(new StatusC)
  val dataregC	 = Flipped(new DataregC)
-
+ 
  val daaEn	 = Input(UInt(3.W))
- val daaDone	 = Output(Bool())
- val sdrfout = Output(Vec(11,UInt(32.W)))
+ val daaDone     = Output(Bool())
+ val sdrfout	 = Output(Vec(11,new Sdrf()))
 
-// For checking 
-  val cdasa = Output(UInt(4.W))
-  val caasa = Output(UInt(4.W))
-  val cdaa = Output(UInt(4.W))
-  val rinfo = Output(UInt(1.W))
-  val unsortvec = Output(Vec(11,UInt(7.W)))
-  val sortvecout = Output(Vec(11,UInt(7.W)))
-  val st = Output(UInt(2.W))
-  val sa = Output(UInt(7.W))
-  val s = Output(UInt(9.W))
-  val sortingdone = Output(Bool())
-  val loadinfo = Output(Bool())
-  val slaveinforeg = Output(Vec(11,UInt(9.W)))
-  val i3cnum = Output(UInt(4.W))
-  val en_ack7E = Output(Bool())
-  val en_tb = Output(Bool())
-  val en_hp = Output(Bool())
-  val ret_ack7E = Output(Bool())
-  val ret_tb = Output(Bool())
-  val ret_hp = Output(Bool())
-  val ret_value1 = Output(UInt(5.W))
-  val ret_value2 = Output(UInt(5.W))
-  val ret_value3 = Output(UInt(5.W))
-  val bdraddr = Output(Bool())
-  val codesent = Output(Bool())
-  val hepreg = Output(Bool())
-
-  val countvarout = Output(UInt(4.W))
-  val countsortout = Output(UInt(4.W))
-  val dasaout = Output(UInt(7.W))
-  val sentStat = Output(Bool())
-  val indexout = Output(UInt(4.W))
-//  val sdrfout = Output(Vec(11,UInt(32.W)))
-  val slvout = Output(UInt(9.W))
-  val stypeout = Output(Vec(11,UInt(1.W)))
-  val stadd = Output(UInt(7.W))
-  val slcon = Output(UInt(2.W))
-  val updatesdrfout = Output(Bool())
-  val stateRegout = Output(UInt(4.W))
-  val DAsuccessout = Output(UInt(4.W))
-  val sent7eout = Output(Bool())
-  val cdaaout = Output(UInt(4.W))
-  val countcheck = Output(UInt(8.W))
-  val pidout = Output(UInt(48.W))
-  val bcrout = Output(UInt(8.W))
-  val dcrout = Output(UInt(8.W))
-  val read64bitsout = Output(UInt(8.W))
-  val selectDA = Output(Bool())
-  val sentDynOut = Output(Bool())
-
-  val dynout = Output(UInt(7.W))
-  val slaveindexout = Output(UInt(4.W))
-  val countNACKout = Output(UInt(4.W))
-  val collisioncountout = Output(UInt(3.W)) 
-  val readslvidx = Output(Bool())
 }
 
 class DaaFSM extends Module {
 
-val io = IO(new FinalBundle)
+val io = IO(new IObundle)
 
 
 // Initialization of Outputs:
@@ -809,7 +702,6 @@ io.configC	 := WireDefault(0.U.asTypeOf(new ConfigC))
 io.tisrA	 := WireDefault(0.U.asTypeOf(new TisrA))
 io.dataregC.dataregTx := VecInit(Seq.fill(4) {0.U(8.W)})
 io.daaDone 	 := 0.B
-
 
 // state-0 (Initialization) variables
 val slvInfoReg	 = RegInit(VecInit(Seq.fill(11) {0.U(9.W)}))
@@ -841,7 +733,7 @@ val countDASuccess  = RegInit(0.U(4.W))
 //state-3 (updateSDRF) variables
 val index	 = RegInit(0.U(4.W))
 val updatesdrf	 = RegInit(0.B)
-val sdrf	 = RegInit(VecInit(Seq.fill(11) {0.U(32.W)}))
+val sdrf	 = Reg(Vec(11,new Sdrf()))
 val slvalueReg	 = RegInit(0.U(9.W))
 
 // state -5 (send7Eread) variables
@@ -865,16 +757,6 @@ val dynamicAddr = RegInit(0.U(7.W))
 val countNACK	   = RegInit(0.U(4.W))
 val collisionCount = RegInit(0.U(3.W))
 
-// For checking
-io.en_ack7E := 0.B
-io.en_tb := 0.B
-io.en_hp := 0.B
-io.ret_ack7E := 0.B
-io.ret_tb := 0.B
-io.ret_hp := 0.B
-io.ret_value1 := 0.U
-io.ret_value2 := 0.U
-io.ret_value3 := 0.U
 
 val initialization :: setaasa :: setdasa :: updateSDRF :: entdaa :: send7Eread :: read64 :: updateDaaSDRF :: stopCD ::  rstdaa  :: Nil = Enum(10)
 
@@ -918,7 +800,7 @@ when(io.configA.bus_reset || io.configA.chip_reset){
 //state-3 (updateSDRF) variables
 	index	 	 := 0.U
 	updatesdrf	 := 0.B
-	sdrf	 	 := VecInit(Seq.fill(11) {0.U(32.W)})
+//	sdrf	 	 := VecInit(Seq.fill(11) {0.U(32.W)})
 	slvalueReg	 := 0.U
 
 // state -5 (send7Eread) variables
@@ -968,14 +850,14 @@ switch(stateReg) {
 			when(slvReg(1,0)==="b11".U) {
 
 		        	when(DaaFSM.typeofSlave(slvReg(8,2))){
-          			 	stype(countFor-1.U):= 1.U
-          			 	countDASA := countDASA + 1.U
-          			 	unsort(countFor-1.U) := slvReg(8,2)
-					totalI3CSlvs := totalI3CSlvs + 1.U
+          			 	stype(countFor-1.U)	:= 1.U
+          			 	countDASA 		:= countDASA + 1.U
+          			 	unsort(countFor-1.U) 	:= slvReg(8,2)
+					totalI3CSlvs 		:= totalI3CSlvs + 1.U
         			}.otherwise {
-					totalI3CSlvs := totalI3CSlvs + 1.U
-          				stype(countFor-1.U) := 0.U
-          				countAASA := countAASA + 1.U
+					totalI3CSlvs 		:= totalI3CSlvs + 1.U
+          				stype(countFor-1.U) 	:= 0.U
+          				countAASA 		:= countAASA + 1.U
 				}
 			}.elsewhen(slvReg(1,0) === "b10".U){
 				totalI3CSlvs := totalI3CSlvs + 1.U
@@ -1012,16 +894,16 @@ switch(stateReg) {
 
 	is(setaasa){
 
-		io.configC.configEn := 1.B
-		io.configC.sdr	:= 1.U
-		io.configC.ini  := 0.U
+		io.configC.configEn 	:= 1.B
+		io.configC.sdr		:= 1.U
+		io.configC.ini  	:= 0.U
 
 
-		val en_ack_7E	    = stateReg === setaasa  && sentBDAddr && !sentCode && !hep
-		val (value1,ack_7E) = DaaFSM.ackHandOff(en_ack_7E)
+		val en_ack_7E	     = stateReg === setaasa  && sentBDAddr && !sentCode && !hep
+		val (value1,ack_7E)  = DaaFSM.ackHandOff(en_ack_7E)
 
-		val en_tbit	  = stateReg === setaasa && sentCode && sentBDAddr
-		val (value2,tbit) = DaaFSM.tBitDelay(en_tbit)
+		val en_tbit	     = stateReg === setaasa && sentCode && sentBDAddr
+		val (value2,tbit)    = DaaFSM.tBitDelay(en_tbit)
 
 		val en_hep	     = stateReg === setaasa && hep && sentBDAddr
 		val (value3,hepDone) = DaaFSM.hdrExitPattern(en_hep)
@@ -1036,17 +918,17 @@ switch(stateReg) {
 	
 		}.elsewhen(io.statusC.an === 0.U && ack_7E){
 			io.dataregC.dataregTx(0) := "h29".U
-			sentCode := 1.B
+			sentCode 	:= 1.B
 
 		}.elsewhen(io.statusC.an === 1.U && ack_7E){
 			io.tisrA.errorM2 := 1.B
 			io.configC.hep	 := 1.U
-			hep := 1.B
+			hep 		 := 1.B
 		}.elsewhen(io.statusC.dst === 1.U && hepDone){
 			sentBDAddr	 := 0.B
 			sentCode  	 := 0.B
 			io.tisrA.errorM2 := 0.B	
-			hep := 0.B
+			hep 		 := 0.B
 		}
 	
 		when(io.statusC.dst === 1.U && tbit){
@@ -1056,70 +938,59 @@ switch(stateReg) {
 			sentBDAddr 	:= 0.B
 			sentCode 	:= 0.B	   
 		}
-		//For Checking
-		io.en_ack7E := en_ack_7E
-		io.en_tb := en_tbit
-		io.en_hp := en_hep
-
-		io.ret_ack7E := ack_7E
-		io.ret_tb := tbit
-		io.ret_hp := hepDone
-	 	io.ret_value1 := value1
- 		io.ret_value2 := value2
-		io.ret_value3 := value3
 
 	}
 
 	is(setdasa){
 
-		io.configC.configEn := 1.B
-		io.configC.sdr	:= 1.U
-		io.configC.ini  := 0.U
+		io.configC.configEn 	:= 1.B
+		io.configC.sdr		:= 1.U
+		io.configC.ini  	:= 0.U
 	
-		val en_ack = (stateReg === setdasa  && sentBDAddr && !sentCode && !hep) || (sentStatAddr)
-                val (value1,ack) = DaaFSM.ackHandOff(en_ack)
+		val en_ack	  = (stateReg === setdasa  && sentBDAddr && !sentCode && !hep) || (sentStatAddr)
+                val (value1,ack)  = DaaFSM.ackHandOff(en_ack)
 
-                val en_tbit = stateReg === setdasa && sentCode && sentBDAddr && !sentStatAddr
+                val en_tbit	  = stateReg === setdasa && sentCode && sentBDAddr && !sentStatAddr
                 val (value2,tbit) = DaaFSM.tBitDelay(en_tbit)
 
-                val en_hep = stateReg === setdasa && hep && sentBDAddr
+                val en_hep	  = stateReg === setdasa && hep && sentBDAddr
                 val (value3,hepDone) = DaaFSM.hdrExitPattern(en_hep)
 
 		when(!sentBDAddr){
-			io.configC.bdccc := 1.U
-                      //  io.configC.s	 := 1.U
-                        io.configC.rw	 := 0.U
+			io.configC.bdccc   := 1.U
+                      //io.configC.s	   := 1.U
+                        io.configC.rw	   := 0.U
                         io.configC.cccNccc := 1.U
                         io.dataregC.dataregTx(0) := "hFC".U
-                        sentBDAddr := 1.B			
+                        sentBDAddr	   := 1.B			
 	
 		}.elsewhen(io.statusC.an === 0.U && ack && !sentStatAddr){
                         io.dataregC.dataregTx(0) := "h87".U
-                        sentCode := 1.B
+                        sentCode		 := 1.B
 
                 }.elsewhen(io.statusC.an === 1.U && ack && !sentStatAddr){
                         io.tisrA.errorM2 := 1.B
                         io.configC.hep 	 := 1.U
-                        hep := 1.B
+                        hep		 := 1.B
                 }.elsewhen(io.statusC.dst === 1.U && hepDone){
-                        sentBDAddr := 0.B
-                        sentCode   := 0.B
+                        sentBDAddr	 := 0.B
+                        sentCode  	 := 0.B
                         io.tisrA.errorM2 := 0.B
-                        hep := 0.B
+                        hep		 := 0.B
                 }.elsewhen(countvar < countDASA && sentCode){
 			when(io.statusC.dst === 1.U && tbit){
-                       		io.configC.srP := 0.U
+                       		io.configC.srP		 := 0.U
                 		io.dataregC.dataregTx(0) := Cat(sortvec(countsort),0.U)
-         	               	sentStatAddr   := 1.B	        
+         	               	sentStatAddr  		 := 1.B	        
          			       		
 				   
                 	}.elsewhen(io.statusC.an === 0.U && ack){
 				io.dataregC.dataregTx(0) := Cat(dasaSA,0.U)
-                                countsort := countsort - 1.U
-                                dasaSA	  := dasaSA + 1.U
-                                countvar  := countvar + 1.U
-                                countDASuccess := countDASuccess + 1.U
-                                sentStatAddr   := 0.B
+                                countsort	 := countsort - 1.U
+                                dasaSA	 	 := dasaSA + 1.U
+                                countvar 	 := countvar + 1.U
+                                countDASuccess	 := countDASuccess + 1.U
+                                sentStatAddr  	 := 0.B
 	
 			}			
 		}.elsewhen(countvar >= countDASA && io.statusC.dst === 1.U && tbit){
@@ -1132,17 +1003,6 @@ switch(stateReg) {
 			dasaSA 		:= "h08".U
 			countvar 	:= 0.U
                 }
-		//For Checking
-		io.en_ack7E := en_ack
-		io.en_tb := en_tbit
-		io.en_hp := en_hep
-
-		io.ret_ack7E := ack
-		io.ret_tb := tbit
-		io.ret_hp := hepDone
-	 	io.ret_value1 := value1
- 		io.ret_value2 := value2
-		io.ret_value3 := value3
 	
 	}
 	
@@ -1154,49 +1014,61 @@ switch(stateReg) {
 				when(stype(index-1.U)===1.U){  //SETDASA			
 				
 					when(slvalueReg(8,2) === sortvec(10)){
-						sdrf(index-1.U):= "h00000088".U
+						sdrf(index-1.U).dynamicAddr := "h8".U
+						sdrf(index-1.U).valid 	    := 1.B
 
 					}.elsewhen(slvalueReg(8,2) === sortvec(9)){
-						sdrf(index-1.U):= "h00000089".U
+						sdrf(index-1.U).dynamicAddr := "h9".U
+						sdrf(index-1.U).valid 	    := 1.B
 
 					}.elsewhen(slvalueReg(8,2) === sortvec(8)){
-						sdrf(index-1.U):= "h0000008A".U
+						sdrf(index-1.U).dynamicAddr := "hA".U
+						sdrf(index-1.U).valid 	    := 1.B
 
 					}.elsewhen(slvalueReg(8,2) === sortvec(7)){
-						sdrf(index-1.U):= "h0000008B".U
+						sdrf(index-1.U).dynamicAddr := "hB".U
+						sdrf(index-1.U).valid 	    := 1.B
 
 					}.elsewhen(slvalueReg(8,2) === sortvec(6)){
-						sdrf(index-1.U):= "h0000008C".U
+						sdrf(index-1.U).dynamicAddr := "hC".U
+						sdrf(index-1.U).valid 	    := 1.B
 					
 					}.elsewhen(slvalueReg(8,2) === sortvec(5)){
+						sdrf(index-1.U).dynamicAddr := "hD".U
+						sdrf(index-1.U).valid 	    := 1.B
 
-						sdrf(index-1.U):= "h0000008D".U	
 					}.elsewhen(slvalueReg(8,2) === sortvec(4)){
+						sdrf(index-1.U).dynamicAddr := "hE".U
+						sdrf(index-1.U).valid 	    := 1.B
 
-						sdrf(index-1.U):= "h0000008E".U
 					}.elsewhen(slvalueReg(8,2) === sortvec(3)){
+						sdrf(index-1.U).dynamicAddr := "hF".U
+						sdrf(index-1.U).valid 	    := 1.B
 
-						sdrf(index-1.U):= "h0000008F".U
 					}.elsewhen(slvalueReg(8,2) === sortvec(2)){
+						sdrf(index-1.U).dynamicAddr := "h10".U
+						sdrf(index-1.U).valid 	    := 1.B
 
-						sdrf(index-1.U):= "h00000090".U
 					}.elsewhen(slvalueReg(8,2) === sortvec(1)){
+						sdrf(index-1.U).dynamicAddr := "h11".U
+						sdrf(index-1.U).valid 	    := 1.B
 
-						sdrf(index-1.U):= "h00000091".U
 					}.elsewhen(slvalueReg(8,2) === sortvec(0)){
-						sdrf(index-1.U):= "h00000092".U
+						sdrf(index-1.U).dynamicAddr := "h12".U
+						sdrf(index-1.U).valid 	    := 1.B
 					}
 				  
 	
 				}.otherwise{   //SETAASA
 
-					sdrf(index-1.U) := Cat("h000000".U,1.U,slvalueReg(8,2))
+					sdrf(index-1.U).dynamicAddr := slvalueReg(8,2)
+					sdrf(index-1.U).valid 	    := 1.B
 
 				}
 
 			}	
 			
-			index := index + 1.U
+			index	   := index + 1.U
 			
 		}.elsewhen(index === 12.U){
 			updatesdrf := 1.B
@@ -1213,42 +1085,40 @@ switch(stateReg) {
 	}
 
 	is(entdaa){
-		io.configC.configEn := 1.B
-		io.configC.sdr	:= 1.U
-		io.configC.ini  := 0.U
+		io.configC.configEn 	:= 1.B
+		io.configC.sdr		:= 1.U
+		io.configC.ini  	:= 0.U
 
-		val en_ack_7E	    = stateReg === entdaa  && sentBDAddr && !sentCode && !hep
-		val (value1,ack_7E) = DaaFSM.ackHandOff(en_ack_7E)
+		val en_ack_7E	     = stateReg === entdaa  && sentBDAddr && !sentCode && !hep
+		val (value1,ack_7E)  = DaaFSM.ackHandOff(en_ack_7E)
 
-		val en_tbit	  = stateReg === entdaa && sentCode && sentBDAddr
-		val (value2,tbit) = DaaFSM.tBitDelay(en_tbit)
+		val en_tbit	     = stateReg === entdaa && sentCode && sentBDAddr
+		val (value2,tbit)    = DaaFSM.tBitDelay(en_tbit)
 
 		val en_hep	     = stateReg === entdaa && hep && sentBDAddr
 		val (value3,hepDone) = DaaFSM.hdrExitPattern(en_hep)
 
 		when(!sentBDAddr){
-			io.configC.bdccc := 1.U
-			io.configC.s	 := 1.U
-	//		io.configC.rw	 := 0.U
+			io.configC.bdccc   := 1.U
+			io.configC.s	   := 1.U
+	//		io.configC.rw	   := 0.U
 			io.configC.cccNccc := 1.U
 			io.dataregC.dataregTx(0) := "hFC".U
-			sentBDAddr	 := 1.B
+			sentBDAddr	   := 1.B
 	
 		}.elsewhen(io.statusC.an === 0.U && ack_7E){
 			io.dataregC.dataregTx(0) := "h07".U
-			io.configC.entdaa := 1.U
-			sentCode := 1.B
-			
-		
+			sentCode	 := 1.B
+
 		}.elsewhen(io.statusC.an === 1.U && ack_7E){
 			io.tisrA.errorM2 := 1.B
 			io.configC.hep	 := 1.U
-			hep := 1.B
+			hep		 := 1.B
 		}.elsewhen(io.statusC.dst === 1.U && hepDone){
 			sentBDAddr	 := 0.B
 			sentCode  	 := 0.B
 			io.tisrA.errorM2 := 0.B	
-			hep := 0.B
+			hep		 := 0.B
 		}
 	
 		when(io.statusC.dst === 1.U && tbit){
@@ -1257,33 +1127,24 @@ switch(stateReg) {
 			sentBDAddr 	:= 0.B
 			sentCode 	:= 0.B	   
 		}
-		//For Checking
-		io.en_ack7E := en_ack_7E
-		io.en_tb := en_tbit
-		io.en_hp := en_hep
-
-		io.ret_ack7E := ack_7E
-		io.ret_tb := tbit
-		io.ret_hp := hepDone
-	 	io.ret_value1 := value1
- 		io.ret_value2 := value2
-		io.ret_value3 := value3
 
 	}
 
 
 	is(send7Eread){
-		io.configC.configEn := 1.B
-		io.configC.sdr	:= 1.U
-		io.configC.ini  := 0.U
-		val en_ack = stateReg === send7Eread && sent7eRead
+		io.configC.configEn	:= 1.B
+		io.configC.sdr		:= 1.U
+		io.configC.ini	  	:= 0.U
+
+		val en_ack	    = stateReg === send7Eread && sent7eRead
                 val (value1,ack_DA) = DaaFSM.ackWithoutHandOff(en_ack)
+	
 		when(!sent7eRead){
-			io.configC.srP 	:= 0.U
-			io.configC.rw 	:= 1.U
+			io.configC.srP 	   := 0.U
+			io.configC.rw 	   := 1.U
 			io.configC.cccNccc := 0.U
 			io.dataregC.dataregTx(0) := "hFD".U
-			sent7eRead 	:= 1.B
+			sent7eRead 	   := 1.B
 		}.elsewhen(io.statusC.an === 0.U && ack_DA && countDaa < countEntDAA){
 			stateReg   	:= read64  
 			sent7eRead	:= 0.B
@@ -1291,16 +1152,12 @@ switch(stateReg) {
 			stateReg 	:= stopCD
 			sent7eRead 	:= 0.B
 		}				
-	//For Checking
-	io.en_ack7E := en_ack
-	io.ret_ack7E := ack_DA
-	io.ret_value1 := value1
 	}
 
 	is(read64){
-		io.configC.configEn := 1.B
-		io.configC.sdr	:= 1.U
-		io.configC.ini  := 0.U
+		io.configC.configEn 	:= 1.B
+		io.configC.sdr		:= 1.U
+		io.configC.ini  	:= 0.U
 		
 		when(io.statusC.ab === 1.U && io.statusC.dsr === 1.U && !rec64bits){
 			pid	  := Cat(io.dataregC.dataregRx(0),io.dataregC.dataregRx(1),io.dataregC.dataregRx(2),io.dataregC.dataregRx(3),io.dataregC.dataregRx(4),io.dataregC.dataregRx(5))
@@ -1322,20 +1179,24 @@ switch(stateReg) {
 
 	is(updateDaaSDRF){
 		io.configC.configEn := 0.B
-                val en_ack = stateReg === updateDaaSDRF && sentDynAddr
+         
+	        val en_ack	    = stateReg === updateDaaSDRF && sentDynAddr
 		val (value1,ack_DA) = DaaFSM.ackWithoutHandOff(en_ack)
 		when(!readSlvIdx){
 			slaveIndex := DaaFSM.lookUpTable(dcr)
 			readSlvIdx := 1.B
 		}.elsewhen(io.statusC.an === 0.U && ack_DA && readSlvIdx){
 
-			sdrf(slaveIndex) := Cat("h0000".U,bcr,"b11".U,dynamicAddr)
-		//	dynamicAddr	 := dynamicAddr + 4.U			
+			sdrf(slaveIndex).dynamicAddr	 := dynamicAddr
+			sdrf(slaveIndex).valid		 := 1.B
+			sdrf(slaveIndex).bcr_load	 := 1.B
+			sdrf(slaveIndex).bcr		 := bcr
+			dynamicAddr	 := dynamicAddr + 4.U			
 			countDASuccess	 := countDASuccess + 1.U
 			stateReg	 := send7Eread
 			readSlvIdx	 := 0.B
 			sentDynAddr	 := 0.B
-			countDaa	:= countDaa + 1.U
+			countDaa	 := countDaa + 1.U
 		}.elsewhen(io.statusC.an === 1.U && ack_DA && readSlvIdx){
 			sentDynAddr	 := 0.B
 			readSlvIdx	 := 0.B
@@ -1345,32 +1206,25 @@ switch(stateReg) {
 				
 			}.elsewhen(countNACK === 1.U){
 				io.tisrA.error 	 := 1.B
-				stateReg := initialization
-	//			stateReg := start  In main I3C master FSM
+				stateReg	 := initialization
 				
 			} 
 
 
 		}
-	//For Checking
-	io.en_ack7E := en_ack
-	io.ret_ack7E := ack_DA
-	io.ret_value1 := value1
-
 	}
 
 	is(stopCD){
-		io.configC.configEn := 1.B
-		io.configC.sdr	:= 1.U
-		io.configC.ini  := 0.U
+		io.configC.configEn	:= 1.B
+		io.configC.sdr		:= 1.U
+		io.configC.ini  	:= 0.U
 		
-		io.configC.srP := 1.U
-			
+		io.configC.srP 		:= 1.U
+	
 		when(countDASuccess === totalI3CSlvs){
 			io.daaDone	 := 1.B
 			io.tisrA.da_assigned := countDASuccess
 			stateReg	 := initialization
-			//	stateReg := start  In main I3C master FSM
 
 		}.otherwise{
 			when(collisionCount < 3.U){
@@ -1378,8 +1232,7 @@ switch(stateReg) {
 				stateReg	:= rstdaa
 			}.otherwise{
 				io.tisrA.collision := 1.B
-				stateReg := initialization
-			//	stateReg := start  In main I3C master FSM
+				stateReg	   := initialization
 			}
 		
 
@@ -1389,39 +1242,40 @@ switch(stateReg) {
 
 	
 	is(rstdaa){
-		io.configC.configEn := 1.B
-		io.configC.sdr	:= 1.U
-		io.configC.ini  := 0.U
-		val en_ack_7E	    = stateReg === rstdaa  && sentBDAddr && !sentCode && !hep
-		val (value1,ack_7E) = DaaFSM.ackHandOff(en_ack_7E)
+		io.configC.configEn 	:= 1.B
+		io.configC.sdr		:= 1.U
+		io.configC.ini  	:= 0.U
 
-		val en_tbit	  = stateReg === rstdaa && sentCode && sentBDAddr
-		val (value2,tbit) = DaaFSM.tBitDelay(en_tbit)
+		val en_ack_7E	     = stateReg === rstdaa  && sentBDAddr && !sentCode && !hep
+		val (value1,ack_7E)  = DaaFSM.ackHandOff(en_ack_7E)
+
+		val en_tbit	     = stateReg === rstdaa && sentCode && sentBDAddr
+		val (value2,tbit)    = DaaFSM.tBitDelay(en_tbit)
 
 		val en_hep	     = stateReg === rstdaa && hep && sentBDAddr
 		val (value3,hepDone) = DaaFSM.hdrExitPattern(en_hep)
 
 		when(!sentBDAddr){
-			io.configC.bdccc := 1.U
-			io.configC.s	 := 1.U
-			io.configC.rw	 := 0.U
+			io.configC.bdccc   := 1.U
+			io.configC.s	   := 1.U
+			io.configC.rw	   := 0.U
 			io.configC.cccNccc := 1.U
 			io.dataregC.dataregTx(0) := "hFC".U
-			sentBDAddr	 := 1.B
+			sentBDAddr	   := 1.B
 	
 		}.elsewhen(io.statusC.an === 0.U && ack_7E){
 			io.dataregC.dataregTx(0) := "h06".U
-			sentCode := 1.B
+			sentCode 		 := 1.B
 
 		}.elsewhen(io.statusC.an === 1.U && ack_7E){
 			io.tisrA.errorM2 := 1.B
 			io.configC.hep	 := 1.U
-			hep := 1.B
+			hep 		 := 1.B
 		}.elsewhen(io.statusC.dst === 1.U && hepDone){
 			sentBDAddr	 := 0.B
 			sentCode  	 := 0.B
 			io.tisrA.errorM2 := 0.B	
-			hep := 0.B
+			hep 		 := 0.B
 		}
 	
 		when(io.statusC.dst === 1.U && tbit){
@@ -1429,19 +1283,7 @@ switch(stateReg) {
 			sentBDAddr 	:= 0.B
 			sentCode 	:= 0.B	   
 		}
-		//For Checking
-		io.en_ack7E := en_ack_7E
-		io.en_tb := en_tbit
-		io.en_hp := en_hep
-
-		io.ret_ack7E := ack_7E
-		io.ret_tb := tbit
-		io.ret_hp := hepDone
-	 	io.ret_value1 := value1
- 		io.ret_value2 := value2
-		io.ret_value3 := value3
-
-		
+	
 
 	}
 
@@ -1451,56 +1293,15 @@ switch(stateReg) {
 } // Switch
 } // elsewhen
 } // daaEn
-	      io.cdasa := countDASA
-              io.caasa := countAASA
-	      io.cdaa  := countEntDAA
-	      io.unsortvec := unsort
-              io.sortvecout := sortvec
-              io.rinfo := readSlaveInfo
-              io.st := slvReg(1,0)
-              io.sa := slvReg(8,2)
-              io.s := slvReg
-	      io.sortingdone := readSortOrder	      
-	      io.loadinfo := loadSlaveInfo
-	      io.slaveinforeg := slvInfoReg	
-	      io.i3cnum := totalI3CSlvs
-	      io.bdraddr := sentBDAddr
-	      io.codesent := sentCode
-	      io.hepreg := hep
-
-	      io.countsortout := countsort
-    	      io.countvarout := countvar
-	      io.dasaout := dasaSA
-	      io.sentStat := sentStatAddr
 
 	      io.sdrfout := sdrf
-	      io.indexout := index
-	      io.slvout := slvalueReg
-	      io.stadd := slvalueReg(8,2)
-	      io.slcon := slvalueReg(1,0)
-	      io.stypeout := stype
-	      io.updatesdrfout := updatesdrf
-  	      io.stateRegout := stateReg
-	      io.DAsuccessout := countDASuccess
 
-	      io.sent7eout := sent7eRead
-	      io.cdaaout := countDaa
-	      io.countcheck := 0.U
-	      io.pidout := pid
-	      io.bcrout := bcr
-	      io.dcrout := dcr
-	      io.dynout := dynamicAddr
-	      io.read64bitsout := rec64bits
-	      io.selectDA := selectedDA
-	      io.sentDynOut := sentDynAddr
-	      io.countNACKout := countNACK
-	      io.slaveindexout := slaveIndex
-	      io.collisioncountout := collisionCount
-	      io.readslvidx := readSlvIdx
+
 
 } // Module
 
 // MasterFSM.scala
+
 object MasterFSM {
 	def ackHandOff(en: Bool): (UInt,Bool) = {
 
@@ -1543,34 +1344,7 @@ class InOuts extends Bundle {
    val configC	 = Output(new ConfigC)
    val statusC	 = Input(new StatusC)
    val dataregC	 = Flipped(new DataregC)
-// For checking
-  val stateval = Output(UInt(3.W))
-  val sdrfout = Output(Vec(11,UInt(32.W)))
-  val daassign = Output(Bool())
-  val en_ack7E = Output(Bool())
-  val en_tb = Output(Bool())
-  val en_hp = Output(Bool())
-  val en_acknooff = Output(Bool())
-  val ret_ack7E = Output(Bool())
-  val ret_tb = Output(Bool())
-  val ret_hp = Output(Bool())
-  val ret_nohoff = Output(Bool())
-  val ret_value1 = Output(UInt(5.W))
-  val ret_value2 = Output(UInt(5.W))
-  val ret_value3 = Output(UInt(5.W))
-  val ret_value4 = Output(UInt(5.W))
 
-  val bdraddr = Output(Bool())  
-  val recdata = Output(Bool())
-  val ldslvid = Output(Bool())
-  val slvreg = Output(UInt(32.W))
-  val slvid = Output(UInt(4.W))
-  val sentda = Output(Bool())
-  val enableread = Output(Bool())
-  val countbyte = Output(UInt(3.W))
-  val readout = Output(UInt(32.W))
-  val writeout = Output(UInt(32.W))
-  val enablewrite = Output(Bool())
 }
 
 
@@ -1599,8 +1373,7 @@ io.dataregC.dataregTx 	:= VecInit(Seq.fill(4) {0.U(8.W)})
 
 //Initialization of registers.
 val daAssigned	 = RegInit(false.B)
-val sdrf	 = RegInit(VecInit(Seq.fill(11){0.U(32.W)}))
-val slaveReg	 = RegInit(0.U(32.W)) 
+val sdrf         = Reg(Vec(11,new Sdrf()))
 val slaveID	 = RegInit(0.U(4.W))
 
 // Counter variables 
@@ -1619,48 +1392,31 @@ val recData 	= RegInit(0.B)
 val enWrite 	= RegInit(0.B)
 val writeData 	= RegInit(0.U(32.W))
 
-//For checking
-io.en_ack7E := 0.B
-io.en_tb := 0.B
-io.en_hp := 0.B
-io.en_acknooff := 0.B
-io.ret_ack7E := 0.B
-io.ret_tb := 0.B
-io.ret_hp := 0.B
-io.ret_nohoff := 0.B
-io.ret_value1 := 0.U
-io.ret_value2 := 0.U
-io.ret_value3 := 0.U
-io.ret_value4 := 0.U
-
-
 
 // FSM
 val start :: daa :: sdrread :: sdrwrite :: Nil = Enum(4)
 
-val stateReg = RegInit(start)
+val stateReg	   = RegInit(start)
 
 //SDR_READ Transition
-val condA_sdrRead = (io.configA.readWrite) && (!io.configA.i3c_mode)
+val condA_sdrRead  = (io.configA.readWrite) && (!io.configA.i3c_mode)
 
 //SDR_Write Transition
 val condB_sdrWrite = (!io.configA.readWrite) && (!io.configA.i3c_mode) 
 
 when(io.configA.bus_reset){
-	daAssigned := 0.B
-	stateReg := start
+	daAssigned 	:= 0.B
+	stateReg 	:= start
 }.otherwise{
 
 
 switch(stateReg) {
 	is(start){
-				tisrReg1.busBusy := 1.B
 		 
 		 when (io.configA.config_done) {
 			when(!daAssigned && io.configA.load_done){		
 				stateReg 	:= daa 
-		//		tisrReg1.busBusy := 1.B
-		// Comment above line for proper functionality.
+
 			}.elsewhen (condA_sdrRead){ 
 
 				stateReg 	:= sdrread 
@@ -1673,9 +1429,9 @@ switch(stateReg) {
 
 	is(daa){
 
-		tisrReg1.busBusy := 1.B
-		io.tisrA.tisrEn := 1.B			
-		val daafsm = Module(new DaaFSM)
+		tisrReg1.busBusy	 := 1.B
+		io.tisrA.tisrEn		 := 1.B			
+		val daafsm		 = Module(new DaaFSM)
 
 		daafsm.io.slvInfoA 	<> io.slvInfoA
 		daafsm.io.configA 	<> io.configA
@@ -1686,43 +1442,42 @@ switch(stateReg) {
 
 //		daafsm.io.dataregC <> io.dataregC
 //		io.dataregC <> daafsm.io.dataregC			
-	 
-
+	 	
+		sdrf 			:= daafsm.io.sdrfout		
 		tisrReg1.da_assigned 	:= daafsm.io.tisrA.da_assigned
 		val errorDaa 		= daafsm.io.tisrA.error
 		val collisionDaa 	= daafsm.io.tisrA.collision
-		tisrReg2.errorM2 	:= daafsm.io.tisrA.errorM2	
-		sdrf		 	:= daafsm.io.sdrfout	
+		tisrReg2.errorM2 	:= daafsm.io.tisrA.errorM2		
 		daafsm.io.daaEn 	:= stateReg
 		val daa_done 		= daafsm.io.daaDone
 
 		when(daa_done){ 
-			stateReg := start
+			stateReg 	 := start
 			tisrReg1.busBusy := 0.B
-			daAssigned := 1.B
+			daAssigned	 := 1.B
 		}.elsewhen(errorDaa || collisionDaa){
-			stateReg := start
-			tisrReg1.busBusy := 0.B 
+			stateReg	   := start
+			tisrReg1.busBusy   := 0.B 
 			tisrReg1.collision := collisionDaa
-			tisrReg1.error := errorDaa
+			tisrReg1.error 	   := errorDaa
 		}
 
 	}
 	
 	is(sdrread){
 	
-		io.configC.configEn := 1.B
-		io.configC.ini 	:= 0.U
-		io.configC.sdr 	:= 1.U
-		io.tisrA.tisrEn := 1.B			
+		io.configC.configEn	 := 1.B
+		io.configC.ini 		 := 0.U
+		io.configC.sdr 		 := 1.U
+		io.tisrA.tisrEn  	 := 1.B			
 		
-		val en_ack_7E       = stateReg === sdrread  && sentBDAddr && !sentDa && !hep
-                val (value1,ack_7E) = MasterFSM.ackHandOff(en_ack_7E)
+		val en_ack_7E        = stateReg === sdrread  && sentBDAddr && !sentDa && !hep
+                val (value1,ack_7E)  = MasterFSM.ackHandOff(en_ack_7E)
 
-         	val en_ackNoOff       = stateReg === sdrread && sentDa && sentBDAddr && !enRead
+         	val en_ackNoOff      = stateReg === sdrread && sentDa && sentBDAddr && !enRead
                 val (value2,ackRead) = MasterFSM.ackWithoutHandOff(en_ackNoOff)
 	
-	        val en_tbit       = stateReg === sdrread && sentDa && sentBDAddr && enRead && !recData
+	        val en_tbit          = stateReg === sdrread && sentDa && sentBDAddr && enRead && !recData
                 val (value3,tbitRec) = MasterFSM.tBitRecDelay(en_tbit)
 
                 val en_hep           = stateReg === sdrread && hep && sentBDAddr
@@ -1730,42 +1485,41 @@ switch(stateReg) {
 
 		when(!loadSlaveId){
 			tisrReg1.busBusy := 1.B
-                        slaveID := io.configA.slaveId
-                        slaveReg := sdrf(slaveID)
-			loadSlaveId := 1.B			
+                        slaveID		 := io.configA.slaveId
+			loadSlaveId	 := 1.B			
 				
 
 		}
 
 		when(!sentBDAddr && loadSlaveId){
-                        when(slaveReg(7) === 0.U) {
+                        when(sdrf(slaveID).valid === 0.U) {
                                 tisrReg1.error := 1.B			
 			}.otherwise{
 		
-	                        io.configC.s     := 1.U
-	                        io.configC.rw    := 1.U
+	                        io.configC.s       := 1.U
+	                        io.configC.rw      := 1.U
 	                        io.configC.cccNccc := 0.U
  	                        io.dataregC.dataregTx(0) := "hFC".U
-	                        sentBDAddr       := 1.B
+	                        sentBDAddr         := 1.B
 			}
                 }.elsewhen(io.statusC.an === 0.U && ack_7E){
-                	io.configC.srP := 0.U
-		        io.dataregC.dataregTx(0) := Cat(slaveReg(6,0),1.U)
-                        sentDa := 1.B
+                	io.configC.srP 		 := 0.U
+		        io.dataregC.dataregTx(0) := Cat(sdrf(slaveID).dynamicAddr,1.U)
+                        sentDa			 := 1.B
 
                 }.elsewhen(io.statusC.an === 1.U && ack_7E){
                         tisrReg2.errorM2 := 1.B
                         io.configC.hep   := 1.U
-                        hep := 1.B
+                        hep 		 := 1.B
                 }.elsewhen(io.statusC.dst === 1.U && hepDone){
                         sentBDAddr       := 0.B
-                        sentDa         := 0.B
+                        sentDa         	 := 0.B
                         tisrReg2.errorM2 := 0.B
-                        hep := 0.B
+                        hep		 := 0.B
                 }
 
 		when(io.statusC.an === 0.U && ackRead){
-			enRead := 1.B	
+			enRead		 := 1.B	
 
 		}
 		when(tbitRec && countByte < 4.U ){
@@ -1774,172 +1528,123 @@ switch(stateReg) {
 				io.configC.abtR := 1.U
 		
 			}.elsewhen(io.statusC.t === 1.U && !io.configA.abort){
-				countByte := countByte + 1.U
+				countByte 	:= countByte + 1.U
 
 			}.elsewhen(io.statusC.t === 0.U){
 				when(io.statusC.dsr === 1.U && io.statusC.ab === 0.U){
-					io.configC.srP 	:= 1.U
-					readData := Cat(io.dataregC.dataregRx(0),io.dataregC.dataregRx(1),io.dataregC.dataregRx(2),io.dataregC.dataregRx(3))
-					countByte := countByte + 1.U
-					recData := 1.B
+					io.configC.srP 	 := 1.U
+					readData	 := Cat(io.dataregC.dataregRx(0),io.dataregC.dataregRx(1),io.dataregC.dataregRx(2),io.dataregC.dataregRx(3))
+					countByte 	 := countByte + 1.U
+					recData  	 := 1.B
 				}.otherwise{
 				//Go to start here--> Received Incomplete Data
-					io.configC.srP := 1.U
-					tisrReg1.error := 1.B
-					stateReg := start
-					sentBDAddr := 0.B
-					sentDa := 0.B
-					loadSlaveId := 0.B
-					enRead := 0.B			
-					countByte := 0.U
+					io.configC.srP 	 := 1.U
+					tisrReg1.error 	 := 1.B
+					stateReg 	 := start
+					sentBDAddr 	 := 0.B
+					sentDa 		 := 0.B
+					loadSlaveId 	 := 0.B
+					enRead 		 := 0.B			
+					countByte 	 := 0.U
 					tisrReg1.busBusy := 0.B
 				}
 			}
 		}.elsewhen(recData && countByte === 4.U){
-			io.dataA.read_data := readData
-			tisrReg1.readValid := 1.B
-			tisrReg1.ack_slv := 1.B
-			sentBDAddr := 0.B
-			sentDa := 0.B
-			countByte := 0.U
-			loadSlaveId := 0.B
-			enRead := 0.B
-			recData := 0.B
-			stateReg := start 
-			tisrReg1.busBusy := 0.B
+			io.dataA.read_data 	:= readData
+			tisrReg1.readValid 	:= 1.B
+			tisrReg1.ack_slv 	:= 1.B
+			sentBDAddr 		:= 0.B
+			sentDa 			:= 0.B
+			countByte 		:= 0.U
+			loadSlaveId 		:= 0.B
+			enRead 			:= 0.B
+			recData 		:= 0.B
+			stateReg 	  	:= start 
+			tisrReg1.busBusy  	:= 0.B
 		}
-	//For Checking
-                io.en_ack7E := en_ack_7E
-                io.en_tb := en_tbit
-                io.en_hp := en_hep
-		io.en_acknooff := en_ackNoOff
-
-                io.ret_ack7E := ack_7E
-                io.ret_tb := tbitRec
-                io.ret_hp := hepDone
-		io.ret_nohoff := ackRead
-
-                io.ret_value1 := value1
-                io.ret_value2 := value2
-                io.ret_value3 := value3 
-		io.ret_value4 := value4		
-
 	} 
-
-
 
 
 	is(sdrwrite){
 
-		io.configC.configEn := 1.B
-		io.configC.ini 	:= 0.U
-		io.configC.sdr 	:= 1.U
-		io.tisrA.tisrEn := 1.B			
+		io.configC.configEn 	:= 1.B
+		io.configC.ini 		:= 0.U
+		io.configC.sdr 		:= 1.U
+		io.tisrA.tisrEn 	:= 1.B			
 	
-		val en_ack       = stateReg === sdrwrite  && sentBDAddr  && !hep && !enWrite
-                val (value1,ack) = MasterFSM.ackHandOff(en_ack)
+		val en_ack           = stateReg === sdrwrite  && sentBDAddr  && !hep && !enWrite
+                val (value1,ack)     = MasterFSM.ackHandOff(en_ack)
 
-	        val en_tbit       = stateReg === sdrwrite  && sentBDAddr && sentDa && enWrite
-                val (value2,tbit) = MasterFSM.tBitDelay(en_tbit)
+	        val en_tbit          = stateReg === sdrwrite  && sentBDAddr && sentDa && enWrite
+                val (value2,tbit)    = MasterFSM.tBitDelay(en_tbit)
 
                 val en_hep           = stateReg === sdrwrite && hep && sentBDAddr
                 val (value3,hepDone) = MasterFSM.hdrExitPattern(en_hep)
 
 		when(!loadSlaveId){
 			tisrReg1.busBusy := 1.B
-                        slaveID := io.configA.slaveId
-                        slaveReg := sdrf(slaveID)
-			loadSlaveId := 1.B			
-			writeData := io.dataA.write_data
+                        slaveID 	 := io.configA.slaveId
+			loadSlaveId	 := 1.B			
+			writeData	 := io.dataA.write_data
 		}
 
 		when(!sentBDAddr && loadSlaveId){
-                        when(slaveReg(7) === 0.U) {
+                          when(sdrf(slaveID).valid  === 0.U) {
                                 tisrReg1.error := 1.B			
 			}.otherwise{
 		
-	                        io.configC.s     := 1.U
-	                        io.configC.rw    := 1.U
+	                        io.configC.s       := 1.U
+	                        io.configC.rw      := 1.U
 	                        io.configC.cccNccc := 0.U
  	                        io.dataregC.dataregTx(0) := "hFC".U
-	                        sentBDAddr       := 1.B
+	                        sentBDAddr         := 1.B
 			}
                 }.elsewhen(io.statusC.an === 0.U && ack && !sentDa){
-                	io.configC.srP := 0.U
-		        io.dataregC.dataregTx(0) := Cat(slaveReg(6,0),1.U)
-                        sentDa := 1.B
+                	io.configC.srP		 := 0.U
+		        io.dataregC.dataregTx(0) := Cat(sdrf(slaveID).dynamicAddr,0.U)
+                        sentDa			 := 1.B
 
                 }.elsewhen(io.statusC.an === 1.U && ack && !sentDa){
                         tisrReg2.errorM2 := 1.B
                         io.configC.hep   := 1.U
-                        hep := 1.B
+                        hep 		 := 1.B
                 }.elsewhen(io.statusC.dst === 1.U && hepDone){
                         sentBDAddr       := 0.B
-                        sentDa         := 0.B
+                        sentDa           := 0.B
                         tisrReg2.errorM2 := 0.B
-                        hep := 0.B
+                        hep		 := 0.B
                 }.elsewhen(sentBDAddr && sentDa && !hep && ack){
 			io.dataregC.dataregTx(0) := writeData(31,24)
 			io.dataregC.dataregTx(1) := writeData(23,16)
 			io.dataregC.dataregTx(2) := writeData(15,8)
 			io.dataregC.dataregTx(3) := writeData(7,0)
-			io.configC.srP := 1.U
-			enWrite := 1.B
+			io.configC.srP		 := 1.U
+			enWrite			 := 1.B
 		
 			
 		}
 		when(io.statusC.dst === 1.U && tbit && enWrite){
-			countByte := countByte + 1.U
+			countByte 	:= countByte + 1.U
 			when(countByte === 3.U){
 				tisrReg1.ack_slv := 1.B
-				countByte := 0.U
-				sentBDAddr := 0.B
-				sentDa := 0.B
-				loadSlaveId := 0.B
-				enWrite := 0.B
-				stateReg := start
+				countByte	 := 0.U
+				sentBDAddr	 := 0.B
+				sentDa		 := 0.B
+				loadSlaveId	 := 0.B
+				enWrite		 := 0.B
+				stateReg	 := start
 				tisrReg1.busBusy := 0.B
 			}
 
 
 		}
-
-		//For Checking
-                io.en_ack7E := en_ack
-                io.en_tb := en_tbit
-                io.en_hp := en_hep
-
-                io.ret_ack7E := ack
-                io.ret_tb := tbit
-                io.ret_hp := hepDone
-
-                io.ret_value1 := value1
-                io.ret_value2 := value2
-                io.ret_value3 := value3
-              
-
-
 	}
 } // Switch
 
 } // Otherwise
 
-		io.stateval := stateReg
-		io.sdrfout := sdrf
-		io.daassign := daAssigned
-
-		io.bdraddr := sentBDAddr
-		io.ldslvid := loadSlaveId
-		io.slvreg := slaveReg
-		io.slvid := slaveID
-		io.sentda := sentDa
-		io.enableread := enRead
-		io.countbyte := countByte
-		io.recdata := recData
-		io.readout := readData
-		io.writeout := writeData
-		io.enablewrite := enWrite
 } // Module
+
 
 
 //Block-C
