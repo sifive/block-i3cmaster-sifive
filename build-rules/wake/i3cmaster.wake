@@ -1,8 +1,8 @@
 def workspaceroot = "{here}/../../"
-def scalaPackage = "sifive.blocks.i3cmaster"
+def scalaPackage = "sifive.blocks.iiicmaster"
 
 global def i3cmasterScalaModule =
-  def name = "i3cmaster"
+  def name = "iiicmaster"
   def rootDir = "{workspaceroot}/craft/I3CMasterIP"
   def scalaVersion = sifiveSkeletonScalaModule.getScalaModuleScalaVersion
   def deps = sifiveSkeletonScalaModule, sifiveBlocksScalaModule, Nil
@@ -23,7 +23,7 @@ def demo =
   | editTestProgramPlanIncludeDirs ("{workspaceroot}/test", _)
 
 def makeI3CMasterSkeletonDUTPlan name blocks =
-  def testharness = "sifive.blocks.i3cmaster.TestSocHarness"
+  def testharness = "sifive.blocks.iiicmaster.TestSocHarness"
   def config = "sifive.skeleton.DefaultConfig"
   def customOverlay =
     def chosenNode =

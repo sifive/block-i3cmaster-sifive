@@ -1,6 +1,6 @@
 
 
-package sifive.blocks.i3cmaster
+package sifive.blocks.iiicmaster
 
 import chisel3._
 import chisel3.util._
