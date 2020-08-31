@@ -1,24 +1,17 @@
 [
     {
-        "commit": "471dfa250b87a16a461f583e2b7eed69293cef02",
+        "commit": "86f0ebc",
         "name": "soc-testsocket-sifive",
         "source": "git@github.com:sifive/soc-testsocket-sifive.git"
     },
     {
-        "commit": "84d8bb615feb2975d6c4f543726563ca71c4538c",
+        "commit": "27a700f",
         "name": "api-generator-sifive",
         "source": "git@github.com:sifive/api-generator-sifive.git"
     },
     {
-        "commit": "1c38068e5338dce8594f3aef0466c6333f46a24d",
+        "commit": "c51c7980f86afa2d1841c524644fefbe564cd982",
         "name": "api-scala-sifive",
         "source": "git@github.com:sifive/api-scala-sifive.git"
-    },
-    {
-
-        "commit": "a11ee2bac9f6ff6151a63694c8983e4fc8ba1fb2",
-        "name": "rocket-chip",
-        "source": "git@github.com:chipsalliance/rocket-chip.git"
-
     }
 ]
