@@ -42,5 +42,6 @@ class TestSocHarness()(implicit p: Parameters) extends LazyModule with LazyScope
   lazy val module = new LazyModuleImp(this) {
     ConstructOM.constructOM()
     Debug.tieoffDebug(dut.module.debug)
+    dut.module.reset_vector.foreach { _ := p(SkeletonResetVector).U }
   }
 }
